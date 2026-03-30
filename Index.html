@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan SEMAR v3.5 - Plataforma de Estudio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="katex/katex.min.css">
+    <script src="katex/katex.min.js"></script>
+    <script src="katex/contrib/auto-render.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --surface-color: #1a1a1a;
+            --border-color: #2e2e2e;
+            --primary-color: #2563eb;
+            --secondary-color: #be185d;
+            --text-color: #f3f4f6;
+            --text-muted-color: #9ca3af;
+        }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-color);
+            background-image: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.9)), url('Fondo.webp');
+            background-size: cover;
+            background-attachment: fixed;
+        }
+        .screen { display: none; animation: fadeIn 0.5s ease-in-out; }
+        .screen.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        nav { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+        .nav-link.active { color: white; background-color: rgba(255, 255, 255, 0.1); }
+        .btn { transition: all 0.2s ease-in-out; }
+        .btn-primary { background-color: var(--primary-color); }
+        .btn-primary:hover { background-color: #1d4ed8; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); }
+        .btn-secondary { background-color: var(--surface-color); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background-color: #2a2a2a; border-color: #4a4a4a; }
+        
+        /* AÑADIDO: Estilo para el botón de SEDENA */
+        .btn-accent { background-color: var(--secondary-color); color: white; }
+        .btn-accent:hover { background-color: #9d174d; }
+
+        .correct-bg { background-color: #166534 !important; border-color: #22c55e !important; }
+        .incorrect-bg { background-color: #991b1b !important; border-color: #ef4444 !important; }
+        .flashcard-container { perspective: 1000px; }
+        .flashcard { width: 100%; height: 300px; position: relative; transform-style: preserve-3d; transition: transform 0.6s; cursor: pointer; }
+        .flashcard.is-flipped { transform: rotateY(180deg); }
+        .flashcard-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; text-align: center; padding: 2rem; border-radius: 1rem; border: 1px solid var(--border-color); }
+        .flashcard-front { background-color: var(--surface-color); }
+        .flashcard-back { background-color: #2a2a2a; transform: rotateY(180deg); }
+        .english-input { background-color: #374151; border: 1px solid #4b5563; }
+        .english-input.correct { border-color: #22c55e; }
+        .english-input.incorrect { border-color: #ef4444; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <nav class="sticky top-0 z-50 bg-black/50 border-b border-gray-800">
+        <div class="container mx-auto px-4 md:px-8">
+            <div class="flex items-center justify-between h-16">
+                <span class="text-xl font-bold text-white">Plan SEMAR v3.5</span>
+                <div class="flex items-center space-x-2 md:space-x-4">
+                    <a href="#main-menu" class="nav-link text-gray-300 hover:bg-gray-700/50 hover:text-white px-3 py-2 rounded-md text-sm font-medium active">Inicio</a>
+                    <a href="#flashcard" class="nav-link text-gray-300 hover:bg-gray-700/50 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Flashcards</a>
+                    <a href="#english" class="nav-link text-gray-300 hover:bg-gray-700/50 hover:text-white px-3 py-2 rounded-md text-sm font-medium">English Hub</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <main class="container mx-auto p-4 md:p-8">
+        <div id="main-menu-screen" class="screen active">
+             <header class="text-center mb-12">
+                <h1 class="text-4xl md:text-5xl font-bold text-white">Plataforma de Estudio</h1>
+                <p class="text-xl text-gray-400 mt-2">EXANI-II para Ing. Aeronaval</p>
+                <div class="relative inline-block text-left mt-4" id="week-plan-dropdown-container">
+                    <button id="week-btn" class="btn btn-secondary text-sm px-4 py-2 inline-flex items-center">
+                        Ver Plan Semanal
+                        <svg class="ml-2 -mr-1 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    </button>
+                    <div id="week-plan-dropdown" class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-[var(--surface-color)] ring-1 ring-black ring-opacity-5 focus:outline-none hidden">
+                        <div class="py-1" id="week-plan-options"></div>
+                    </div>
+                </div>
+            </header>
+            <div class="max-w-2xl mx-auto flex flex-col items-center justify-center space-y-5">
+                <button id="srs-review-btn" class="btn btn-primary w-full text-white font-bold py-4 rounded-lg text-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Repaso Diario</span>
+                    <span id="srs-review-count" class="ml-3 bg-white/20 text-white text-xs font-semibold px-2.5 py-1 rounded-full">0</span>
+                </button>
+                <button id="exani-practice-btn" class="btn btn-secondary w-full font-bold py-4 rounded-lg text-lg">
+                    🧠 Práctica EXANI-II
+                </button>
+                <button id="sedena-practice-btn" class="btn btn-accent w-full font-bold py-3 rounded-lg text-base mt-4">
+                    🛡️ Práctica SEDENA (Plan B)
+                </button>
+            </div>
+        </div>
+        <div id="subject-menu-screen" class="screen">
+            <header class="mb-8 flex justify-between items-center">
+                 <h2 id="subject-menu-header" class="text-3xl font-bold text-white">Materias EXANI-II</h2>
+                 <button id="back-to-main-1" class="btn btn-secondary text-sm px-4 py-2">&larr; Volver</button>
+            </header>
+            <div id="subjects-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto mb-6"></div>
+            <div id="shuffle-container" class="max-w-4xl mx-auto">
+                 <button id="shuffle-all-btn" class="btn btn-secondary w-full font-bold py-4 rounded-lg text-lg">
+                    📚 Práctica Libre (Shuffle)
+                </button>
+            </div>
+            <div id="sedena-shuffle-container" class="hidden max-w-4xl mx-auto">
+     <button id="shuffle-sedena-btn" class="btn btn-accent w-full font-bold py-4 rounded-lg text-lg">
+        🛡️ Práctica General SEDENA (Shuffle)
+    </button>
+</div>
+        </div>
+        <div id="topic-menu-screen" class="screen">
+            <header class="mb-8 flex justify-between items-center">
+                <h2 id="topic-menu-title" class="text-3xl font-bold text-white"></h2>
+                <button id="back-to-subjects" class="btn btn-secondary text-sm px-4 py-2">&larr; Volver</button>
+            </header>
+            <div id="topics-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4"></div>
+        </div>
+        <div id="quiz-screen" class="screen">
+             <div class="max-w-4xl mx-auto p-6 bg-[var(--surface-color)] rounded-xl shadow-lg border border-[var(--border-color)]">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="quiz-title" class="text-2xl font-bold text-white"></h2>
+                    <button id="close-quiz-btn" class="btn btn-secondary text-sm px-4 py-2">&times; Cerrar</button>
+                </div>
+                <div id="question-area">
+                    <p id="progress-text" class="text-gray-400 mb-2"></p>
+                    <div class="w-full bg-gray-700 rounded-full h-2.5 mb-6"><div id="progress-bar" class="bg-blue-500 h-2.5 rounded-full transition-all duration-300"></div></div>
+                    <div id="quiz-topic-tag" class="mb-3 h-6"></div>
+                    <div id="question-text" class="text-xl lg:text-2xl font-semibold mb-6 text-center min-h-[100px] flex items-center justify-center"></div>
+                    <div id="answer-area" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                    <div id="feedback-area" class="mt-4 text-lg font-medium h-10 text-center"></div>
+                </div>
+                <div id="results-area" class="hidden text-center">
+                    <h3 class="text-3xl font-bold text-white mb-4">¡Cuestionario completado!</h3><p class="text-xl text-gray-300 mb-2">Puntuación:</p><p id="final-score" class="text-5xl font-bold text-white mb-8"></p>
+                    <div class="flex justify-center gap-4">
+                        <button id="restart-quiz-btn" class="btn btn-secondary font-bold py-3 px-6 rounded-lg">Intentar de Nuevo</button>
+                        <button id="srs-feedback-btn" class="btn btn-primary text-white font-bold py-3 px-6 rounded-lg hidden">Evaluar Repaso</button>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end"><button id="next-btn" class="btn btn-primary text-white font-bold py-2 px-5 rounded-lg hidden">Siguiente &rarr;</button></div>
+            </div>
+        </div>
+        <div id="flashcard-menu-screen" class="screen">
+             <header id="flashcard-main-header" class="mb-10 text-center">
+                <h1 class="text-4xl md:text-5xl font-bold text-white">Flashcards de Repaso</h1>
+                <p class="text-xl text-gray-400 mt-2">Selecciona una materia para ver sus temas.</p>
+            </header>
+            <header id="flashcard-topic-header" class="mb-8 flex justify-between items-center hidden">
+                 <h2 id="flashcard-subject-title" class="text-3xl font-bold text-white"></h2>
+                 <button id="back-to-flashcard-subjects" class="btn btn-secondary text-sm px-4 py-2">&larr; Volver a Materias</button>
+            </header>
+            <div class="w-full max-w-4xl mx-auto text-center">
+                <button id="shuffle-flashcards-btn" class="btn btn-primary text-white font-bold py-4 px-8 rounded-lg text-xl w-full mb-8">
+                    🧠 Repaso General (Shuffle)
+                </button>
+                <div id="flashcard-subjects-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                <div id="flashcard-topics-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden"></div>
+            </div>
+        </div>
+        <div id="flashcard-review-screen" class="screen">
+            <header class="mb-8 flex justify-between items-center w-full max-w-2xl mx-auto">
+                 <h2 id="flashcard-topic-title" class="text-3xl font-bold text-white"></h2>
+                 <button id="back-to-flashcard-menu" class="btn btn-secondary text-sm px-4 py-2">&larr; Volver</button>
+            </header>
+            <div class="w-full max-w-2xl mx-auto px-4 text-center">
+                <div class="flashcard-container">
+                    <div id="flashcard" class="flashcard">
+                        <div id="flashcard-front" class="flashcard-face flashcard-front"><p class="text-2xl font-semibold"></p></div>
+                        <div id="flashcard-back" class="flashcard-face flashcard-back"><p class="text-xl"></p></div>
+                    </div>
+                </div>
+                <div class="mt-8">
+                    <p id="flashcard-counter" class="text-gray-400 mb-4"></p>
+                    <div class="flex justify-center items-center space-x-4">
+                        <button id="prev-card-btn" class="btn btn-secondary font-bold py-3 px-6 rounded-lg disabled:opacity-50">&larr;</button>
+                        <button id="flip-card-btn" class="btn btn-primary text-white font-bold py-3 px-8 rounded-lg text-lg">Girar</button>
+                        <button id="next-card-btn" class="btn btn-secondary font-bold py-3 px-6 rounded-lg disabled:opacity-50">&rarr;</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="english-hub-screen" class="screen">
+            <header class="text-center mb-10">
+                <h1 class="text-3xl md:text-4xl font-bold text-white">English Study Hub</h1>
+                <p class="text-lg text-gray-400 mt-2">Selecciona un tema para practicar.</p>
+            </header>
+            <div id="english-topics-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6 max-w-7xl mx-auto w-full"></div>
+        </div>
+        <div id="english-quiz-container" class="screen">
+            <div class="container mx-auto p-4 md:p-8 max-w-3xl">
+                <div class="p-6 bg-[var(--surface-color)] rounded-xl shadow-lg border border-[var(--border-color)]">
+                     <div class="flex justify-between items-center mb-6">
+                        <h2 id="english-quiz-title" class="text-2xl font-bold text-white"></h2>
+                        <button id="close-english-quiz-btn" class="btn btn-secondary text-sm px-4 py-2">&times; Cerrar</button>
+                    </div>
+                    <div id="english-question-area">
+                        <p id="english-progress-text" class="text-gray-400 mb-2"></p>
+                        <div class="w-full bg-gray-700 rounded-full h-2.5 mb-4"><div id="english-progress-bar" class="bg-sky-500 h-2.5 rounded-full" style="width: 0%"></div></div>
+                        <div id="english-topic-tag-area" class="mb-3 h-6"></div>
+                        <div id="english-question-text" class="text-xl mb-4 leading-relaxed"></div>
+                        <div id="english-answer-area"></div>
+                        <div id="english-feedback-area" class="mt-4 text-lg font-medium h-10"></div>
+                    </div>
+                    <div id="english-results-area" class="hidden text-center">
+                        <h3 class="text-3xl font-bold text-white mb-4">Quiz Completed!</h3><p class="text-xl text-gray-300 mb-2">Final Score:</p><p id="english-final-score" class="text-5xl font-bold text-sky-400 mb-8"></p>
+                        <button id="english-restart-quiz-btn" class="btn btn-primary text-white font-bold py-3 px-6 rounded-lg">Try Again</button>
+                    </div>
+                    <div class="mt-6 flex justify-end">
+                        <button id="english-check-btn" class="btn bg-green-700 hover:bg-green-600 text-white font-bold py-2 px-5 rounded-lg">Check</button>
+                        <button id="english-next-btn" class="btn btn-primary text-white font-bold py-2 px-5 rounded-lg hidden">Next &rarr;</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="difficulty-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+            <div class="bg-[var(--surface-color)] border border-[var(--border-color)] rounded-xl shadow-2xl p-8 max-w-sm w-full">
+                <h3 id="modal-topic-title" class="text-2xl font-bold text-center mb-6 text-white"></h3>
+                <div class="space-y-4">
+                    <button data-difficulty="básico" class="difficulty-btn w-full btn btn-secondary font-bold py-3 rounded-lg">Básico</button>
+                    <button data-difficulty="intermedio" class="difficulty-btn w-full btn btn-secondary font-bold py-3 rounded-lg">Intermedio</button>
+                    <button data-difficulty="avanzado" class="difficulty-btn w-full btn btn-secondary font-bold py-3 rounded-lg">Avanzado</button>
+                </div>
+                <button id="modal-close-btn" class="mt-6 w-full btn btn-secondary font-bold py-2 rounded-lg">Cancelar</button>
+            </div>
+        </div>
+        <div id="week-plan-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+            <div class="bg-[var(--surface-color)] border border-[var(--border-color)] rounded-xl shadow-2xl p-8 max-w-2xl w-full">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="week-plan-title" class="text-2xl font-bold text-white"></h3>
+                    <button id="week-plan-close-btn" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                <div id="week-plan-content"></div>
+            </div>
+        </div>
+        <div id="shuffle-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+            <div class="bg-[var(--surface-color)] border border-[var(--border-color)] rounded-xl shadow-2xl p-8 max-w-lg w-full">
+                <div class="flex justify-between items-center mb-6"><h3 class="text-2xl font-bold text-white">Modo de Práctica Libre</h3><button id="shuffle-close-btn" class="text-gray-400 hover:text-white text-2xl">&times;</button></div>
+                <div class="space-y-4">
+                    <p class="text-gray-400 text-sm">Elige qué grupo de preguntas quieres mezclar. Se seleccionarán 30 preguntas al azar.</p>
+                    <div class="grid grid-cols-2 gap-4" id="shuffle-scopes-grid"></div>
+                    <button data-shuffle-scope="month-1" class="shuffle-btn w-full btn btn-secondary font-bold py-3 rounded-lg">Mes 1 (Semanas 1-4)</button>
+                    <button data-shuffle-scope="all" class="shuffle-btn w-full btn btn-primary font-bold py-3 rounded-lg">Todas las Materias</button>
+                </div>
+            </div>
+        </div>
+        <div id="srs-feedback-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+             <div class="bg-[var(--surface-color)] border border-[var(--border-color)] rounded-xl shadow-2xl p-8 max-w-2xl w-full">
+                <h3 class="text-2xl font-bold text-white mb-4">Evalúa tu Repaso</h3>
+                <p class="text-[var(--text-muted-color)] mb-6">Para cada tema, indica si lo dominaste (el intervalo de repaso aumentará) o si necesitas repasarlo de nuevo pronto (el intervalo se reiniciará a 1 día).</p>
+                <div id="srs-feedback-items" class="space-y-4 max-h-60 overflow-y-auto"></div>
+                <div class="mt-6 text-right"><button id="srs-feedback-done-btn" class="btn btn-primary text-white font-bold py-2 px-5 rounded-lg">Listo</button></div>
+            </div>
+        </div>
+    </main>
+
+    <script src="bancodepreguntas.js"></script>
+    <script src="english_questions.js"></script>
+    <script src="flashcards.js"></script>
+    <script src="bancosedena.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const SRS_INTERVALS = [1, 3, 7, 16, 35];
+            const weeklyPlan = {
+                1: { 'Pensamiento Matemático': 'Jerarquía de Operaciones', 'Redacción Indirecta': 'Categorías Gramaticales', 'Física': 'Despeje de Fórmulas' },
+                2: { 'Pensamiento Matemático': 'Leyes de Exponentes', 'Redacción Indirecta': 'Reglas de Acentuación' },
+                3: { 'Pensamiento Matemático': 'Factorización', 'Redacción Indirecta': 'Uso de Grafías' },
+                4: { 'Pensamiento Matemático': 'Funciones Trigonométricas', 'Física': 'Conceptos de Ondas' }
+            };
+
+            let activePlan = ''; // AÑADIDA: 'semar' o 'sedena'
+            let currentQuiz = [], currentQuestionIndex = 0, score = 0;
+            let currentSubject = '', currentTopic = '', currentDifficulty = '';
+            let quizType = '';
+            let srsData = {};
+            let currentFlashcardDeck = [], currentFlashcardIndex = 0;
+            
+            const screens = document.querySelectorAll('.screen');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            function showScreen(screenId) {
+                screens.forEach(s => s.classList.remove('active'));
+                const targetScreen = document.getElementById(screenId);
+                if(targetScreen) {
+                    targetScreen.classList.add('active');
+                }
+                updateNav(screenId);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            function updateNav(screenId) {
+                navLinks.forEach(link => {
+                    const href = link.getAttribute('href').substring(1);
+                    link.classList.remove('active');
+                    if (href === 'main-menu' && (screenId.startsWith('main-menu') || screenId.startsWith('subject') || screenId.startsWith('topic') || screenId.startsWith('quiz'))) {
+                        link.classList.add('active');
+                    } else if (href === 'flashcard' && screenId.startsWith('flashcard')) {
+                        link.classList.add('active');
+                    } else if (href === 'english' && screenId.startsWith('english')) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+            
+            function populateFlashcardSubjects() {
+                const grid = document.getElementById('flashcard-subjects-grid');
+                if (!grid) return;
+                grid.innerHTML = '';
+                Object.keys(flashcardData).forEach(subject => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-secondary font-bold py-8 rounded-lg text-xl';
+                    btn.textContent = subject;
+                    btn.onclick = () => showFlashcardTopicsFor(subject);
+                    grid.appendChild(btn);
+                });
+            }
+
+            function showFlashcardTopicsFor(subject) {
+                document.getElementById('flashcard-main-header').classList.add('hidden');
+                document.getElementById('flashcard-subjects-grid').classList.add('hidden');
+                document.getElementById('shuffle-flashcards-btn').classList.add('hidden');
+
+                document.getElementById('flashcard-topic-header').classList.remove('hidden');
+                document.getElementById('flashcard-topics-grid').classList.remove('hidden');
+                document.getElementById('flashcard-subject-title').textContent = subject;
+                
+                const grid = document.getElementById('flashcard-topics-grid');
+                grid.innerHTML = '';
+                
+                Object.keys(flashcardData[subject]).forEach(topic => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-secondary font-bold py-6 rounded-lg text-lg';
+                    btn.textContent = topic;
+                    btn.onclick = () => startFlashcardReview(subject, topic);
+                    grid.appendChild(btn);
+                });
+            }
+            
+            function backToFlashcardSubjects() {
+                document.getElementById('flashcard-main-header').classList.remove('hidden');
+                document.getElementById('flashcard-subjects-grid').classList.remove('hidden');
+                document.getElementById('shuffle-flashcards-btn').classList.remove('hidden');
+
+                document.getElementById('flashcard-topic-header').classList.add('hidden');
+                document.getElementById('flashcard-topics-grid').classList.add('hidden');
+            }
+
+            function startFlashcardReview(subject, topic, isShuffle = false) {
+                if (isShuffle) {
+                    document.getElementById('flashcard-topic-title').textContent = "Repaso General";
+                    let allCards = [];
+                    Object.values(flashcardData).forEach(subjectContent => {
+                        Object.values(subjectContent).forEach(topicCards => {
+                            allCards.push(...topicCards);
+                        });
+                    });
+                    currentFlashcardDeck = allCards.sort(() => 0.5 - Math.random());
+                } else {
+                    document.getElementById('flashcard-topic-title').textContent = topic;
+                    currentFlashcardDeck = [...flashcardData[subject][topic]].sort(() => 0.5 - Math.random());
+                }
+                
+                if (currentFlashcardDeck.length === 0) {
+                    alert('No hay tarjetas para este tema.');
+                    return;
+                }
+                
+                currentFlashcardIndex = 0;
+                displayFlashcard();
+                showScreen('flashcard-review-screen');
+            }
+
+            function displayFlashcard() {
+                const flashcard = document.getElementById('flashcard');
+                flashcard.classList.remove('is-flipped');
+                if (currentFlashcardDeck.length === 0 || !currentFlashcardDeck[currentFlashcardIndex]) return;
+                
+                const card = currentFlashcardDeck[currentFlashcardIndex];
+                document.querySelector('#flashcard-front p').textContent = card.front;
+                document.querySelector('#flashcard-back p').textContent = card.back;
+                document.getElementById('flashcard-counter').textContent = `${currentFlashcardIndex + 1} / ${currentFlashcardDeck.length}`;
+                document.getElementById('prev-card-btn').disabled = currentFlashcardIndex === 0;
+                document.getElementById('next-card-btn').disabled = currentFlashcardIndex === currentFlashcardDeck.length - 1;
+            }
+
+            function checkExaniAnswer(event, question) {
+                const selectedButton = event.target.closest('button');
+                if (!selectedButton) return; 
+
+                const selectedAnswer = selectedButton.dataset.answer;
+                const isCorrect = selectedAnswer.trim().toLowerCase() === question.a.trim().toLowerCase();
+                
+                const answerArea = document.getElementById('answer-area');
+                const feedbackArea = document.getElementById('feedback-area');
+
+                if (isCorrect) {
+                    selectedButton.classList.add('correct-bg'); 
+                    feedbackArea.textContent = '¡Correcto!'; 
+                    score++;
+                } else {
+                    selectedButton.classList.add('incorrect-bg'); 
+                    feedbackArea.innerHTML = `Incorrecto. La respuesta es: <strong>${question.a}</strong>`;
+                    Array.from(answerArea.children).forEach(btn => {
+                        if (btn.dataset.answer.trim().toLowerCase() === question.a.trim().toLowerCase()) {
+                            btn.classList.add('correct-bg');
+                        }
+                    });
+                }
+                Array.from(answerArea.children).forEach(btn => { btn.disabled = true; });
+                document.getElementById('next-btn').classList.remove('hidden');
+                document.getElementById('next-btn').focus();
+            }
+
+            function displayExaniQuestion() {
+                const q = currentQuiz[currentQuestionIndex];
+                document.getElementById('progress-text').textContent = `Pregunta ${currentQuestionIndex + 1} de ${currentQuiz.length}`;
+                document.getElementById('progress-bar').style.width = `${((currentQuestionIndex + 1) / currentQuiz.length) * 100}%`;
+                document.getElementById('question-text').textContent = q.q;
+                const answerArea = document.getElementById('answer-area');
+                answerArea.innerHTML = ''; 
+                document.getElementById('feedback-area').textContent = ''; 
+                document.getElementById('quiz-topic-tag').innerHTML = '';
+                
+                // MODIFICADO: Añadir la etiqueta de tema también para 'sedena'
+                if(quizType === 'srs' || quizType === 'shuffle' || quizType === 'sedena') {
+                    const fullTopicName = q.fullTopicName || `${currentSubject} - ${currentTopic}`;
+                    document.getElementById('quiz-topic-tag').innerHTML = `<span class="bg-purple-600 text-white text-xs font-semibold px-2.5 py-1 rounded-full">${fullTopicName}</span>`;
+                }
+
+                let options = [...q.options];
+                for (let i = options.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [options[i], options[j]] = [options[j], options[i]];
+                }
+                options.forEach(optionText => {
+                    const button = document.createElement('button');
+                    button.className = 'btn btn-secondary p-4 rounded-lg text-left';
+                    button.textContent = optionText;
+                    button.dataset.answer = optionText;
+                    button.onclick = (e) => checkExaniAnswer(e, q);
+                    answerArea.appendChild(button);
+                });
+                document.getElementById('next-btn').classList.add('hidden');
+            }
+
+            // --- FUNCIONES AÑADIDAS/MODIFICADAS PARA EL PLAN B ---
+
+            // Función ORIGINAL (sin tocar)
+            function populateExaniSubjects() {
+                const grid = document.getElementById('subjects-grid');
+                if (!grid) return;
+                grid.innerHTML = '';
+                Object.keys(exaniData).forEach(subject => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-secondary p-8 rounded-lg text-xl';
+                    btn.textContent = subject;
+                    btn.onclick = () => showExaniTopicsFor(subject);
+                    grid.appendChild(btn);
+                });
+            }
+
+            // Función NUEVA para SEDENA
+            function populateSedenaSubjects() {
+                const grid = document.getElementById('subjects-grid');
+                if (!grid) return;
+                grid.innerHTML = '';
+                document.getElementById('subject-menu-header').textContent = "Materias Cultural (SEDENA)";
+                document.getElementById('shuffle-container').style.display = 'none';
+
+                Object.keys(sedenaData).forEach(subject => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-secondary p-8 rounded-lg text-xl';
+                    btn.textContent = subject;
+                    btn.onclick = () => showSedenaTopicsFor(subject);
+                    grid.appendChild(btn);
+                });
+            }
+
+            // Función ORIGINAL (sin tocar)
+            function showExaniTopicsFor(subject) {
+                currentSubject = subject;
+                const grid = document.getElementById('topics-grid');
+                document.getElementById('topic-menu-title').textContent = subject;
+                grid.innerHTML = '';
+                Object.keys(exaniData[subject]).forEach(topic => {
+                     const btn = document.createElement('button');
+                     btn.className = 'btn btn-secondary p-4 rounded-lg text-center';
+                     btn.textContent = topic;
+                     btn.onclick = () => { 
+                         quizType = 'exani';
+                         currentTopic = topic; 
+                         showDifficultyModal(topic); 
+                     };
+                     grid.appendChild(btn);
+                });
+                showScreen('topic-menu-screen');
+            }
+            
+            // Función NUEVA para SEDENA
+            function showSedenaTopicsFor(subject) {
+                currentSubject = subject;
+                const grid = document.getElementById('topics-grid');
+                document.getElementById('topic-menu-title').textContent = subject;
+                grid.innerHTML = '';
+                Object.keys(sedenaData[subject]).forEach(topic => {
+                     const btn = document.createElement('button');
+                     btn.className = 'btn btn-secondary p-4 rounded-lg text-center';
+                     btn.textContent = topic;
+                     btn.onclick = () => { 
+                         quizType = 'sedena';
+                         currentTopic = topic; 
+                         showDifficultyModal(topic); // Esta función se encargará de saltar la dificultad
+                     };
+                     grid.appendChild(btn);
+                });
+                showScreen('topic-menu-screen');
+            }
+
+            // Función ORIGINAL (sin tocar)
+            function startExaniQuiz() {
+                hideDifficultyModal();
+                let pool = exaniData[currentSubject][currentTopic].preguntas;
+                if (currentDifficulty === 'básico') pool = pool.filter(q => q.d === 'básico');
+                else if (currentDifficulty === 'intermedio') pool = pool.filter(q => q.d === 'básico' || q.d === 'intermedio');
+                const shuffled = [...pool].sort(() => 0.5 - Math.random());
+                currentQuiz = shuffled.length > 10 ? shuffled.slice(0, 10) : shuffled;
+                if (currentQuiz.length === 0) { alert(`No hay preguntas de nivel "${currentDifficulty}" para este tema.`); return; }
+                currentQuestionIndex = 0; score = 0;
+                setupQuizView(`${currentSubject}: ${currentTopic}`);
+            }
+
+            // Función NUEVA para SEDENA
+            function startSedenaQuiz() {
+                let pool = sedenaData[currentSubject][currentTopic].preguntas;
+                const shuffled = [...pool].sort(() => 0.5 - Math.random());
+                currentQuiz = shuffled; // Cargar todas las preguntas teóricas
+                if (currentQuiz.length === 0) { alert(`No hay preguntas para este tema.`); return; }
+                currentQuestionIndex = 0; score = 0;
+                setupQuizView(`${currentSubject}: ${currentTopic}`);
+            }
+
+            // Función MODIFICADA para saltar la dificultad
+            const difficultyModal = document.getElementById('difficulty-modal');
+            const modalTopicTitle = document.getElementById('modal-topic-title');
+            function showDifficultyModal(topic) {
+                currentTopic = topic;
+                modalTopicTitle.textContent = topic;
+                
+                if (quizType === 'sedena') { // Si es Plan B, no hay dificultad
+                    hideDifficultyModal();
+                    startSedenaQuiz();
+                } else { // Si es Plan A (exani) o english, muestra el modal
+                    difficultyModal.style.display = 'flex';
+                }
+            }
+
+            // --- RESTO DE FUNCIONES (sin tocar) ---
+            function setupNavigation() {
+                navLinks.forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const targetId = e.target.getAttribute('href').substring(1);
+                        let screenId;
+                        switch(targetId) {
+                            case 'flashcard': screenId = 'flashcard-menu-screen'; backToFlashcardSubjects(); break;
+                            case 'english': screenId = 'english-hub-screen'; break;
+                            default: screenId = 'main-menu-screen';
+                        }
+                        showScreen(screenId);
+                    });
+                });
+                
+                // MODIFICADO: El botón exani-practice-btn ahora debe establecer el plan
+                document.getElementById('exani-practice-btn').addEventListener('click', () => {
+                    activePlan = 'semar';
+                    document.getElementById('subject-menu-header').textContent = "Materias EXANI-II (SEMAR)";
+                    document.getElementById('shuffle-container').style.display = 'block';
+                    populateExaniSubjects(); // Esta es tu función original
+                    showScreen('subject-menu-screen');
+                });
+
+                document.getElementById('back-to-main-1').addEventListener('click', () => showScreen('main-menu-screen'));
+                document.getElementById('back-to-subjects').addEventListener('click', () => showScreen('subject-menu-screen'));
+                document.getElementById('back-to-flashcard-menu').addEventListener('click', () => { showScreen('flashcard-menu-screen'); backToFlashcardSubjects(); });
+                document.getElementById('close-english-quiz-btn').addEventListener('click', () => showScreen('english-hub-screen'));
+            }
+
+            function hideDifficultyModal() {
+                difficultyModal.style.display = 'none';
+            }
+            difficultyModal.addEventListener('click', e => {
+                 if (e.target.matches('.difficulty-btn')) {
+                    const difficulty = e.target.dataset.difficulty;
+                    if (quizType === 'english') {
+                        startEnglishQuiz(difficulty);
+                    } else {
+                        currentDifficulty = difficulty;
+                        startExaniQuiz(); // Llama a la función original de EXANI
+                    }
+                 }
+            });
+
+            function setupQuizView(title) {
+                showScreen('quiz-screen');
+                document.getElementById('results-area').classList.add('hidden');
+                document.getElementById('question-area').classList.remove('hidden');
+                document.getElementById('srs-feedback-btn').classList.add('hidden');
+                document.getElementById('quiz-title').textContent = title;
+                displayExaniQuestion();
+            }
+            function nextExaniQuestion() {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < currentQuiz.length) {
+                    displayExaniQuestion();
+                } else {
+                    showExaniFinalScore();
+                }
+            }
+            function showExaniFinalScore() {
+                document.getElementById('question-area').classList.add('hidden');
+                document.getElementById('results-area').classList.remove('hidden');
+                document.getElementById('next-btn').classList.add('hidden');
+                document.getElementById('final-score').textContent = `${score} / ${currentQuiz.length}`;
+                if (quizType === 'srs') {
+                    document.getElementById('srs-feedback-btn').classList.remove('hidden');
+                }
+            }
+            function populateEnglishTopics() {
+                 const grid = document.getElementById('english-topics-grid');
+                if (!grid) return;
+                grid.innerHTML = '';
+                 Object.keys(exercisesData).forEach(topicName => {
+                    const button = document.createElement('button');
+                    button.className = 'btn btn-secondary text-white font-semibold py-4 px-2 rounded-lg text-center';
+                    button.textContent = topicName;
+                    button.addEventListener('click', () => {
+                        quizType = 'english';
+                        currentTopic = topicName;
+                        showDifficultyModal(topicName);
+                    });
+                    grid.appendChild(button);
+                });
+                 const shuffleButton = document.createElement('button');
+                shuffleButton.className = 'btn btn-primary text-white font-semibold py-4 px-2 rounded-lg text-center';
+                shuffleButton.textContent = '🧠 Shuffle';
+                shuffleButton.addEventListener('click', () => {
+                    quizType = 'english';
+                    currentTopic = 'Shuffle';
+                    showDifficultyModal('Shuffle');
+                });
+                grid.appendChild(shuffleButton);
+            }
+            function startEnglishQuiz(difficulty) {
+                hideDifficultyModal();
+                currentDifficulty = difficulty;
+                let questionPool;
+                if (currentTopic === 'Shuffle') {
+                    let allQuestions = [];
+                    for (const topicName in exercisesData) {
+                        const topicQuestions = exercisesData[topicName];
+                        let questionsToUse = getQuestionsByDifficulty(topicQuestions, difficulty);
+                        const taggedQuestions = questionsToUse.map(q => ({ ...q, topic: topicName }));
+                        allQuestions.push(...taggedQuestions);
+                    }
+                    questionPool = allQuestions.sort(() => 0.5 - Math.random()).slice(0, 25);
+                } else {
+                    questionPool = getQuestionsByDifficulty(exercisesData[currentTopic], difficulty);
+                    questionPool = questionPool.sort(() => 0.5 - Math.random()).slice(0, 10);
+                }
+                currentQuiz = questionPool;
+                currentQuestionIndex = 0; score = 0; quizType = 'english';
+                setupEnglishQuizView(`${currentTopic} - ${difficulty}`);
+            }
+            function getQuestionsByDifficulty(pool, difficulty) {
+                 if (difficulty === 'básico') return pool.slice(0, 30);
+                 if (difficulty === 'intermedio') return pool.slice(0, 50);
+                 return pool.slice(0, 60);
+            }
+            function setupEnglishQuizView(title) {
+                showScreen('english-quiz-container');
+                document.getElementById('english-results-area').classList.add('hidden');
+                document.getElementById('english-question-area').classList.remove('hidden');
+                document.getElementById('english-quiz-title').textContent = title;
+                displayEnglishQuestion();
+            }
+            function displayEnglishQuestion() {
+                const q = currentQuiz[currentQuestionIndex];
+                document.getElementById('english-progress-text').textContent = `Question ${currentQuestionIndex + 1} of ${currentQuiz.length}`;
+                document.getElementById('english-progress-bar').style.width = `${((currentQuestionIndex + 1) / currentQuiz.length) * 100}%`;
+                document.getElementById('english-question-text').innerHTML = '';
+                document.getElementById('english-feedback-area').textContent = '';
+                document.getElementById('english-topic-tag-area').innerHTML = '';
+                if (currentTopic === 'Shuffle' && q.topic) {
+                    document.getElementById('english-topic-tag-area').innerHTML = `<span class="bg-purple-600 text-white text-xs font-semibold px-2.5 py-1 rounded-full">${q.topic}</span>`;
+                }
+                const parts = q.q.split('___');
+                let html = parts.map((part, i) => i < parts.length - 1 ? `<span>${part}</span><input type="text" class="english-input w-24 p-1 rounded-md text-center mx-1">` : `<span>${part}</span>`).join('');
+                document.getElementById('english-question-text').innerHTML = html;
+                document.getElementById('english-check-btn').classList.remove('hidden');
+                document.getElementById('english-next-btn').classList.add('hidden');
+                document.querySelector('.english-input')?.focus();
+            }
+            function checkEnglishAnswer() {
+                const q = currentQuiz[currentQuestionIndex];
+                const inputs = document.querySelectorAll('.english-input');
+                const userAnswers = Array.from(inputs).map(input => input.value.trim().toLowerCase());
+                const correctAnswers = q.a.split('/').map(a => a.trim().toLowerCase());
+                const altAnswers = q.alt ? q.alt.split('/').map(a => a.trim().toLowerCase()) : null;
+                let isCorrect = userAnswers.join('/') === correctAnswers.join('/');
+                if (!isCorrect && altAnswers) {
+                    isCorrect = userAnswers.join('/') === altAnswers.join('/');
+                }
+                const feedbackArea = document.getElementById('english-feedback-area');
+                if (isCorrect) {
+                    feedbackArea.textContent = 'Correct!';
+                    feedbackArea.className = 'mt-4 text-lg font-medium h-10 text-green-400';
+                    inputs.forEach(input => input.classList.add('correct'));
+                    score++;
+                } else {
+                    feedbackArea.innerHTML = `Incorrect. The correct answer is: <strong class="text-white">${q.a.replace(/\//g, ' / ')}</strong>`;
+                    feedbackArea.className = 'mt-4 text-lg font-medium h-10 text-red-400';
+                    inputs.forEach(input => input.classList.add('incorrect'));
+                }
+                inputs.forEach(input => input.disabled = true);
+                document.getElementById('english-check-btn').classList.add('hidden');
+                document.getElementById('english-next-btn').classList.remove('hidden');
+            }
+            function nextEnglishQuestion() {
+                 currentQuestionIndex++;
+                 if (currentQuestionIndex < currentQuiz.length) {
+                     displayEnglishQuestion();
+                 } else {
+                     showEnglishFinalScore();
+                 }
+            }
+            function showEnglishFinalScore() {
+                document.getElementById('english-question-area').classList.add('hidden');
+                document.getElementById('english-results-area').classList.remove('hidden');
+                document.getElementById('english-check-btn').classList.add('hidden');
+                document.getElementById('english-next-btn').classList.add('hidden');
+                document.getElementById('english-final-score').textContent = `${score} / ${currentQuiz.length}`;
+            }
+            function showExaniTopicsFor(subject) {
+                currentSubject = subject;
+                const grid = document.getElementById('topics-grid');
+                document.getElementById('topic-menu-title').textContent = subject;
+                grid.innerHTML = '';
+                Object.keys(exaniData[subject]).forEach(topic => {
+                     const btn = document.createElement('button');
+                     btn.className = 'btn btn-secondary p-4 rounded-lg text-center';
+                     btn.textContent = topic;
+                     btn.onclick = () => { 
+                         quizType = 'exani';
+                         currentTopic = topic; 
+                         showDifficultyModal(topic); 
+                     };
+                     grid.appendChild(btn);
+                });
+                showScreen('topic-menu-screen');
+            }
+            function startShuffleQuiz(scope) {
+                document.getElementById('shuffle-modal').style.display = 'none';
+                let allQuestions = [], quizTitleText = "Repaso General";
+                for (const subject in exaniData) {
+                    for (const topic in exaniData[subject]) {
+                        const topicData = exaniData[subject][topic];
+                        let condition = false;
+                        if (scope === 'all') {
+                            condition = true; quizTitleText = "Repaso General (Todas)";
+                        } else if (scope.startsWith('week-')) {
+                            const week = parseInt(scope.split('-')[1]);
+                            if (topicData.semana === week) { condition = true; quizTitleText = `Repaso: Semana ${week}`; }
+                        } else if (scope === 'month-1') {
+                            if (topicData.semana >= 1 && topicData.semana <= 4) { condition = true; quizTitleText = "Repaso: Mes 1"; }
+                        }
+                        if (condition) {
+                            const taggedQuestions = topicData.preguntas.map(q => ({...q, fullTopicName: `${subject} - ${topic}`}));
+                            allQuestions.push(...taggedQuestions);
+                        }
+                    }
+                }
+                if (allQuestions.length === 0) return alert("No hay preguntas para este modo de repaso.");
+                const shuffled = allQuestions.sort(() => 0.5 - Math.random());
+                currentQuiz = shuffled.slice(0, 30);
+                quizType = 'shuffle';
+                currentQuestionIndex = 0; score = 0;
+                setupQuizView(quizTitleText);
+            }
+            // =============================================
+// --- FUNCIÓN NUEVA PARA SHUFFLE DE SEDENA ---
+// =============================================
+function startSedenaShuffleQuiz() {
+    let allQuestions = [];
+    let quizTitleText = "Práctica General (SEDENA)";
+
+    // 1. Recopilar todas las preguntas de sedenaData
+    for (const subject in sedenaData) {
+        for (const topic in sedenaData[subject]) {
+            // Verificamos que el tema exista y tenga un array de preguntas
+            if (sedenaData[subject][topic] && Array.isArray(sedenaData[subject][topic].preguntas)) {
+                // Añadimos la info del tema a cada pregunta para el tag
+                const taggedQuestions = sedenaData[subject][topic].preguntas.map(q => ({
+                    ...q,
+                    fullTopicName: `${subject} - ${topic}`
+                }));
+                allQuestions.push(...taggedQuestions);
+            }
+        }
+    }
+
+    if (allQuestions.length === 0) {
+        return alert("No se encontraron preguntas en bancosedena.js para mezclar.");
+    }
+
+    // 2. Mezclar el mazo completo
+    const shuffled = allQuestions.sort(() => 0.5 - Math.random());
+    
+    // 3. Tomar 30 preguntas (o todas si hay menos de 30)
+    currentQuiz = shuffled.length > 30 ? shuffled.slice(0, 30) : shuffled; 
+    
+    // 4. Configurar el tipo de quiz
+    // Usamos 'shuffle' para que el botón "Cerrar" regrese al menú de materias
+    quizType = 'shuffle'; 
+    currentQuestionIndex = 0;
+    score = 0;
+    
+    // 5. Iniciar la vista del quiz
+    setupQuizView(quizTitleText); 
+}
+            const getTodayDateString = () => new Date().toISOString().split('T')[0];
+            const addDays = (date, days) => { let result = new Date(date); result.setDate(result.getDate() + days); return result.toISOString().split('T')[0]; };
+            function initializeSRS() {
+                let data = JSON.parse(localStorage.getItem('srsData')) || {};
+                let today = getTodayDateString();
+                let hasChanged = false;
+                const allTopics = {...exaniData, ...flashcardData}; 
+                for (const subject in allTopics) {
+                    for (const topic in allTopics[subject]) {
+                        const fullTopicName = `${subject} - ${topic}`;
+                        if (!data[fullTopicName]) {
+                            data[fullTopicName] = { level: 1, lastReviewed: today, nextReview: addDays(today, SRS_INTERVALS[0]) };
+                            hasChanged = true;
+                        }
+                    }
+                }
+                srsData = data;
+                if(hasChanged) localStorage.setItem('srsData', JSON.stringify(srsData));
+                updateReviewCount();
+            }
+            function getTopicsForReview() {
+                const today = getTodayDateString();
+                return Object.keys(srsData).filter(topicName => topicName !== "undefined - undefined" && srsData[topicName].nextReview <= today);
+            }
+            function updateReviewCount() {
+                const count = getTopicsForReview().length;
+                document.getElementById('srs-review-count').textContent = count;
+                document.getElementById('srs-review-btn').disabled = count === 0;
+                document.getElementById('srs-review-btn').classList.toggle('opacity-50', count === 0);
+            }
+            function startSRSQuiz() {
+                const topicsForCurrentSRSReview = getTopicsForReview();
+                if (topicsForCurrentSRSReview.length === 0) return alert("¡Felicidades! No tienes repasos pendientes por hoy.");
+                let reviewQuestions = [];
+                topicsForCurrentSRSReview.forEach(fullTopicName => {
+                    const [subject, topic] = fullTopicName.split(' - ');
+                    if (exaniData[subject] && exaniData[subject][topic]) {
+                        const allTopicQuestions = exaniData[subject][topic].preguntas;
+                        const taggedQuestions = allTopicQuestions.map(q => ({...q, fullTopicName}));
+                        reviewQuestions.push(...[...taggedQuestions].sort(() => 0.5 - Math.random()).slice(0, 3));
+                    }
+                });
+                if(reviewQuestions.length === 0) {
+                    updateReviewCount();
+                    return alert("No se encontraron preguntas para los temas de repaso de hoy.");
+                }
+                currentQuiz = [...reviewQuestions].sort(() => 0.5 - Math.random());
+                quizType = 'srs';
+                currentQuestionIndex = 0; score = 0;
+                setupQuizView('Repaso Diario');
+            }
+            function showSRSFeedbackModal() {
+                const itemsContainer = document.getElementById('srs-feedback-items');
+                itemsContainer.innerHTML = '';
+                const uniqueTopicsInReview = [...new Set(currentQuiz.map(q => q.fullTopicName))];
+                uniqueTopicsInReview.forEach(fullTopicName => {
+                    const item = document.createElement('div');
+                    item.className = 'flex justify-between items-center p-3 bg-gray-800 rounded-lg';
+                    item.innerHTML = `<span class="text-white">${fullTopicName}</span>
+                                      <div class="space-x-2">
+                                          <button data-topic="${fullTopicName}" data-success="true" class="btn bg-green-600 hover:bg-green-500 font-bold py-2 px-4 rounded">✅ Dominado</button>
+                                          <button data-topic="${fullTopicName}" data-success="false" class="btn bg-red-600 hover:bg-red-500 font-bold py-2 px-4 rounded">❌ Repasar</button>
+                                      </div>`;
+                    itemsContainer.appendChild(item);
+                });
+                document.getElementById('srs-feedback-modal').style.display = 'flex';
+            }
+            function updateSRSTopic(topicName, success) {
+                const topicData = srsData[topicName];
+                if (success) {
+                    topicData.level = Math.min(topicData.level + 1, SRS_INTERVALS.length);
+                } else {
+                    topicData.level = 1;
+                }
+                const newInterval = SRS_INTERVALS[topicData.level - 1];
+                topicData.lastReviewed = getTodayDateString();
+                topicData.nextReview = addDays(getTodayDateString(), newInterval);
+            }
+            function setupGlobalEventListeners() {
+    document.getElementById('week-btn').addEventListener('click', () => document.getElementById('week-plan-dropdown').classList.toggle('hidden'));
+    document.getElementById('week-plan-close-btn').addEventListener('click', () => document.getElementById('week-plan-modal').style.display = 'none');
+    window.addEventListener('click', function(e) { if (!document.getElementById('week-plan-dropdown-container').contains(e.target)) { document.getElementById('week-plan-dropdown').classList.add('hidden'); } });
+    
+    // Listener para el modal de shuffle de EXANI
+    document.getElementById('shuffle-all-btn').addEventListener('click', () => document.getElementById('shuffle-modal').style.display = 'flex');
+    document.getElementById('shuffle-close-btn').addEventListener('click', () => document.getElementById('shuffle-modal').style.display = 'none');
+    document.getElementById('shuffle-modal').addEventListener('click', e => { if (e.target.matches('.shuffle-btn')) { startShuffleQuiz(e.target.dataset.shuffleScope); } });
+    
+    document.getElementById('modal-close-btn').addEventListener('click', hideDifficultyModal);
+    document.getElementById('srs-feedback-btn').addEventListener('click', showSRSFeedbackModal);
+    document.getElementById('srs-feedback-modal').addEventListener('click', (e) => {
+        if(e.target.matches('[data-topic]')) {
+            const topicName = e.target.dataset.topic;
+            const success = e.target.dataset.success === 'true';
+            updateSRSTopic(topicName, success);
+            e.target.parentElement.parentElement.classList.add('opacity-25');
+            e.target.parentElement.querySelectorAll('button').forEach(b => b.disabled = true);
+        }
+    });
+    document.getElementById('srs-feedback-done-btn').addEventListener('click', () => {
+        localStorage.setItem('srsData', JSON.stringify(srsData));
+        document.getElementById('srs-feedback-modal').style.display = 'none';
+        updateReviewCount();
+        showScreen('main-menu-screen');
+    });
+    document.getElementById('srs-review-btn').addEventListener('click', startSRSQuiz);
+    document.getElementById('next-btn').addEventListener('click', nextExaniQuestion);
+    
+    document.getElementById('restart-quiz-btn').addEventListener('click', () => {
+        if (quizType === 'exani') startExaniQuiz();
+        else if (quizType === 'sedena') startSedenaQuiz();
+        else if (quizType === 'srs') startSRSQuiz();
+        else if (quizType === 'shuffle' && activePlan === 'semar') startShuffleQuiz('all'); // MODIFICADO
+        else if (quizType === 'shuffle' && activePlan === 'sedena') startSedenaShuffleQuiz(); // MODIFICADO
+    });
+    
+    document.getElementById('close-quiz-btn').addEventListener('click', () => {
+            if (quizType === 'exani' || quizType === 'sedena') showScreen('topic-menu-screen');
+            else if (quizType === 'shuffle') showScreen('subject-menu-screen');
+            else showScreen('main-menu-screen');
+    });
+
+    // MODIFICADO: Listeners para los botones del Plan A y Plan B
+    document.getElementById('exani-practice-btn').addEventListener('click', () => {
+        activePlan = 'semar';
+        document.getElementById('subject-menu-header').textContent = "Materias EXANI-II (SEMAR)";
+        document.getElementById('shuffle-container').style.display = 'block';
+        document.getElementById('sedena-shuffle-container').style.display = 'none'; // MODIFICADO
+        populateExaniSubjects();
+        showScreen('subject-menu-screen');
+    });
+    document.getElementById('sedena-practice-btn').addEventListener('click', () => {
+        activePlan = 'sedena';
+        document.getElementById('shuffle-container').style.display = 'none'; // MODIFICADO
+        document.getElementById('sedena-shuffle-container').style.display = 'block'; // MODIFICADO
+        populateSedenaSubjects();
+        showScreen('subject-menu-screen');
+    });
+
+    // NUEVO: Listener para el botón de shuffle de SEDENA
+    document.getElementById('shuffle-sedena-btn').addEventListener('click', startSedenaShuffleQuiz);
+
+    document.getElementById('flip-card-btn').addEventListener('click', () => document.getElementById('flashcard').classList.toggle('is-flipped'));
+    document.getElementById('flashcard').addEventListener('click', () => document.getElementById('flashcard').classList.toggle('is-flipped'));
+    document.getElementById('next-card-btn').addEventListener('click', () => { if(currentFlashcardIndex < currentFlashcardDeck.length - 1) { currentFlashcardIndex++; displayFlashcard(); } });
+    document.getElementById('prev-card-btn').addEventListener('click', () => { if(currentFlashcardIndex > 0) { currentFlashcardIndex--; displayFlashcard(); } });
+    document.getElementById('shuffle-flashcards-btn').addEventListener('click', () => startFlashcardReview(null, null, true));
+    document.getElementById('back-to-flashcard-subjects').addEventListener('click', backToFlashcardSubjects);
+    document.getElementById('english-check-btn').addEventListener('click', checkEnglishAnswer);
+    document.getElementById('english-next-btn').addEventListener('click', nextEnglishQuestion);
+    document.getElementById('english-restart-quiz-btn').addEventListener('click', () => startEnglishQuiz(currentDifficulty));
+}
+            function setupShuffleModal() {
+                const grid = document.getElementById('shuffle-scopes-grid');
+                if (!grid) return;
+                grid.innerHTML = '';
+                Object.keys(weeklyPlan).forEach(weekNum => {
+                    const btn = document.createElement('button');
+                    btn.className = 'shuffle-btn w-full btn btn-secondary font-bold py-3 rounded-lg';
+                    btn.dataset.shuffleScope = `week-${weekNum}`;
+                    btn.textContent = `Semana ${weekNum}`;
+                    grid.appendChild(btn);
+                });
+            }
+
+            // FUNCIÓN AÑADIDA PARA CORREGIR EL ERROR
+            function setupWeekPlanDropdown() {
+                const optionsContainer = document.getElementById('week-plan-options');
+                const modal = document.getElementById('week-plan-modal');
+                const modalTitle = document.getElementById('week-plan-title');
+                const modalContent = document.getElementById('week-plan-content');
+                const dropdown = document.getElementById('week-plan-dropdown');
+
+                // Si alguno de los elementos no existe, salimos para evitar más errores
+                if (!optionsContainer || !modal || !modalTitle || !modalContent || !dropdown) {
+                    console.warn("Faltan elementos del modal del plan semanal. El dropdown no funcionará.");
+                    return; 
+                }
+
+                optionsContainer.innerHTML = ''; // Limpiar opciones previas
+
+                Object.keys(weeklyPlan).forEach(weekNum => {
+                    const weekLink = document.createElement('a');
+                    weekLink.href = '#';
+                    weekLink.className = 'block px-4 py-2 text-sm text-[var(--text-color)] hover:bg-gray-700 rounded-md';
+                    weekLink.textContent = `Semana ${weekNum}`;
+                    
+                    weekLink.onclick = (e) => {
+                        e.preventDefault();
+                        
+                        // 1. Poner el título del modal
+                        modalTitle.textContent = `Plan de la Semana ${weekNum}`;
+                        
+                        // 2. Llenar el contenido del modal
+                        modalContent.innerHTML = '';
+                        const topics = weeklyPlan[weekNum];
+                        const ul = document.createElement('ul');
+                        ul.className = 'list-disc pl-5 space-y-2 text-gray-300';
+                        
+                        if (topics && Object.keys(topics).length > 0) {
+                            Object.keys(topics).forEach(subject => {
+                                const li = document.createElement('li');
+                                li.innerHTML = `<strong class="text-white">${subject}:</strong> ${topics[subject]}`;
+                                ul.appendChild(li);
+                            });
+                        } else {
+                            ul.innerHTML = '<li class="text-gray-400">No hay temas asignados para esta semana.</li>';
+                        }
+                        modalContent.appendChild(ul);
+
+                        // 3. Ocultar el dropdown y mostrar el modal
+                        dropdown.classList.add('hidden');
+                        modal.style.display = 'flex';
+                    };
+                    optionsContainer.appendChild(weekLink);
+                });
+            }
+
+            function initializeApp() {
+                setupNavigation();
+                setupWeekPlanDropdown();
+                populateExaniSubjects(); // Carga las materias de SEMAR por defecto (ocultas)
+                populateFlashcardSubjects();
+                populateEnglishTopics();
+                setupShuffleModal();
+                initializeSRS();
+                setupGlobalEventListeners();
+            }
+            initializeApp();
+        });
+    </script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const onKatexLoad = () => {
+                const katexOptions = {
+                    delimiters: [
+                        {left: "$$", right: "$$", display: true},
+                        {left: "$", right: "$", display: false}
+                    ]
+                };
+                renderMathInElement(document.body, katexOptions);
+                const renderMathCallback = function(mutationsList, observer) {
+                    renderMathInElement(document.body, katexOptions);
+                };
+                const observer = new MutationObserver(renderMathCallback);
+                observer.observe(document.body, { 
+                    childList: true, 
+                    subtree: true, 
+                    characterData: true
+                });
+            };
+            if (window.renderMathInElement) {
+                onKatexLoad();
+            } else {
+                const autoRenderScript = document.querySelector('script[src*="auto-render.min.js"]');
+                if (autoRenderScript) {
+                    autoRenderScript.addEventListener('load', onKatexLoad);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

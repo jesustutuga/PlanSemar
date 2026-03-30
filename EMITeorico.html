@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrenador Táctico Teoría EMI v3.0 - Heavy Duty</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* --- ESTÉTICA CORE (DARK MODE ABSOLUTO) --- */
+        body {
+            background-color: #000000;
+            color: #e5e7eb;
+            font-family: 'Courier New', Courier, monospace;
+            overflow-x: hidden;
+            background-image: 
+                linear-gradient(rgba(0, 20, 0, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 20, 0, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Efecto Scanline CRT */
+        .scanline {
+            width: 100%;
+            height: 100px;
+            z-index: 10;
+            background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(34, 197, 94, 0.05) 50%, rgba(0,0,0,0) 100%);
+            opacity: 0.1;
+            position: absolute;
+            bottom: 100%;
+            animation: scanline 8s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes scanline {
+            0% { bottom: 100%; }
+            100% { bottom: -100%; }
+        }
+
+        /* Mecánica de Giro de Tarjeta 3D */
+        .perspective-1000 { perspective: 1000px; }
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .card-flip.flipped .card-inner { transform: rotateY(180deg); }
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 2rem;
+            border: 1px solid #15803d;
+            border-radius: 0.5rem;
+            background-color: #050505;
+            box-shadow: 0 0 30px rgba(21, 128, 61, 0.1);
+        }
+        .card-back {
+            background-color: #020a05; 
+            transform: rotateY(180deg);
+            border-color: #34d399;
+        }
+
+        /* Badges de Nivel Táctico */
+        .level-badge {
+            font-size: 0.70rem;
+            padding: 4px 12px;
+            border-radius: 2px;
+            margin-bottom: 15px;
+            display: inline-block;
+            text-transform: uppercase;
+            font-weight: 900;
+            letter-spacing: 2px;
+            border: 1px solid;
+        }
+        .lvl-basic { background: rgba(30, 58, 138, 0.2); color: #60a5fa; border-color: #1e3a8a; }
+        .lvl-inter { background: rgba(161, 98, 7, 0.2); color: #facc15; border-color: #a16207; }
+        .lvl-adv { background: rgba(127, 29, 29, 0.2); color: #f87171; border-color: #7f1d1d; }
+
+        /* Efectos de Texto */
+        .glitch-text {
+            text-shadow: 2px 0 rgba(255,0,0,0.3), -2px 0 rgba(0,0,255,0.3);
+            animation: glitch 3s infinite alternate;
+        }
+        @keyframes glitch {
+            0% { text-shadow: 2px 0 rgba(255,0,0,0.3), -2px 0 rgba(0,0,255,0.3); }
+            2% { text-shadow: -2px 0 rgba(255,0,0,0.3), 2px 0 rgba(0,0,255,0.3); transform: translateX(2px); }
+            4% { transform: translateX(0); }
+            100% { text-shadow: 2px 0 rgba(255,0,0,0.3), -2px 0 rgba(0,0,255,0.3); }
+        }
+
+        /* Modal Personalizado */
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(5px);
+        }
+        .tactical-btn {
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+            transition: all 0.2s ease;
+        }
+        .tactical-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.2);
+        }
+        .tactical-btn:active {
+            transform: translateY(1px);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="scanline"></div>
+
+    <!-- PANTALLA 1: MENÚ PRINCIPAL -->
+    <div id="start-screen" class="text-center max-w-5xl w-full z-20 transition-opacity duration-500">
+        <div class="mb-8 border-b border-green-900 pb-4">
+            <h1 class="text-5xl md:text-8xl font-black text-green-600 mb-2 glitch-text tracking-tighter">EMI_TÁCTICO_V3</h1>
+            <div class="flex justify-center items-center gap-4 text-xs tracking-[0.5em] text-gray-500 uppercase">
+                <span>Baldor</span>
+                <span class="text-green-800">//</span>
+                <span>Zill</span>
+                <span class="text-green-800">//</span>
+                <span>Thomas</span>
+            </div>
+        </div>
+        
+        <p class="text-gray-400 mb-10 max-w-2xl mx-auto text-sm font-mono leading-relaxed">
+            <span class="text-green-500 font-bold">> PROTOCOLO DE MEMORIZACIÓN ACTIVA:</span><br>
+            Selecciona la materia para desplegar opciones de repaso. El sistema filtrará preguntas aleatorias del banco de datos masivo.
+        </p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <!-- Botón Álgebra -->
+            <button onclick="openModeSelection('algebra')" class="relative h-64 border border-green-900 bg-gray-900/40 hover:bg-green-900/20 transition-all group overflow-hidden flex flex-col items-center justify-center gap-4 tactical-btn">
+                <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIiBzdHJva2U9IiMxNDUzMmQiIHN0cm9rZS13aWR0aD0iMSIgZmlsbD0ibm9uZSI+PHBhdGggZD0iTTAgNDBMIH4wIEwwIi8+PC9zdmc+')] opacity-20"></div>
+                <i class="fas fa-superscript text-5xl text-gray-600 group-hover:text-green-500 transition-colors"></i>
+                <div class="z-10 text-center">
+                    <h3 class="font-black text-2xl text-gray-200 group-hover:text-green-400 tracking-widest">ÁLGEBRA</h3>
+                    <p class="text-[10px] text-green-700 mt-2 font-mono uppercase">Baldor - Ed. 2019</p>
+                </div>
+            </button>
+            
+            <!-- Botón Geo -->
+            <button onclick="openModeSelection('geo')" class="relative h-64 border border-green-900 bg-gray-900/40 hover:bg-green-900/20 transition-all group overflow-hidden flex flex-col items-center justify-center gap-4 tactical-btn">
+                <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIiBzdHJva2U9IiMxNDUzMmQiIHN0cm9rZS13aWR0aD0iMSIgZmlsbD0ibm9uZSI+PHBhdGggZD0iTTAgMEw0MCA0MCIvPjwvc3ZnPg==')] opacity-20"></div>
+                <i class="fas fa-drafting-compass text-5xl text-gray-600 group-hover:text-green-500 transition-colors"></i>
+                <div class="z-10 text-center">
+                    <h3 class="font-black text-2xl text-gray-200 group-hover:text-green-400 tracking-widest">GEO. ANALÍTICA</h3>
+                    <p class="text-[10px] text-green-700 mt-2 font-mono uppercase">Zill - Caps 8,9,12</p>
+                </div>
+            </button>
+            
+            <!-- Botón Cálculo -->
+            <button onclick="openModeSelection('calculo')" class="relative h-64 border border-green-900 bg-gray-900/40 hover:bg-green-900/20 transition-all group overflow-hidden flex flex-col items-center justify-center gap-4 tactical-btn">
+                <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDIwIDIwIiBmaWxsPSIjMTQ1MzJkIj48Y2lyY2xlIGN4PSIxIiBjeT0iMSIgcj0iMSIvPjwvc3ZnPg==')] opacity-20"></div>
+                <i class="fas fa-integral text-5xl text-gray-600 group-hover:text-green-500 transition-colors"></i>
+                <div class="z-10 text-center">
+                    <h3 class="font-black text-2xl text-gray-200 group-hover:text-green-400 tracking-widest">CÁLCULO</h3>
+                    <p class="text-[10px] text-green-700 mt-2 font-mono uppercase">Thomas - Límites/Deriv</p>
+                </div>
+            </button>
+        </div>
+
+        <footer class="text-xs text-green-900/50 font-mono">
+            SISTEMA OPERATIVO v3.0 // BASE DE DATOS EXTENDIDA // MODO OSCURO ACTIVO
+        </footer>
+    </div>
+
+    <!-- MODAL DE SELECCIÓN DE MODO -->
+    <div id="mode-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-overlay opacity-0 transition-opacity duration-300">
+        <div class="bg-black border border-green-600 p-8 max-w-lg w-full relative shadow-[0_0_50px_rgba(22,163,74,0.3)]">
+            <button onclick="closeModeModal()" class="absolute top-4 right-4 text-green-700 hover:text-green-400"><i class="fas fa-times text-xl"></i></button>
+            
+            <h2 id="modal-title" class="text-2xl font-black text-green-500 mb-2 uppercase tracking-tighter">CONFIGURACIÓN DE MISIÓN</h2>
+            <p class="text-gray-400 text-xs font-mono mb-8 border-b border-gray-800 pb-4">SELECCIONA LA INTENSIDAD DEL ENTRENAMIENTO</p>
+
+            <div class="space-y-3">
+                <button onclick="startGame(10)" class="w-full flex items-center justify-between p-4 bg-gray-900 border border-gray-700 hover:border-green-500 hover:bg-green-900/20 transition-all group">
+                    <span class="text-gray-300 font-bold group-hover:text-white">RÁFAGA CORTA</span>
+                    <span class="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded group-hover:bg-green-800 group-hover:text-green-100">10 Reactivos</span>
+                </button>
+                <button onclick="startGame(20)" class="w-full flex items-center justify-between p-4 bg-gray-900 border border-gray-700 hover:border-green-500 hover:bg-green-900/20 transition-all group">
+                    <span class="text-gray-300 font-bold group-hover:text-white">RÁFAGA MEDIA</span>
+                    <span class="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded group-hover:bg-green-800 group-hover:text-green-100">20 Reactivos</span>
+                </button>
+                <button onclick="startGame(30)" class="w-full flex items-center justify-between p-4 bg-gray-900 border border-gray-700 hover:border-green-500 hover:bg-green-900/20 transition-all group">
+                    <span class="text-gray-300 font-bold group-hover:text-white">RÁFAGA EXTENDIDA</span>
+                    <span class="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded group-hover:bg-green-800 group-hover:text-green-100">30 Reactivos</span>
+                </button>
+                <button onclick="startGame('all')" class="w-full flex items-center justify-between p-4 border border-green-600 bg-green-900/10 hover:bg-green-600 hover:text-black transition-all group mt-6">
+                    <span class="font-black tracking-widest uppercase"><i class="fas fa-biohazard mr-2"></i> SIMULACIÓN COMPLETA</span>
+                    <span class="text-xs font-bold px-2 py-1 border border-green-500 group-hover:border-black rounded">TODAS</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANTALLA 2: JUEGO -->
+    <div id="game-screen" class="hidden w-full max-w-3xl z-20 flex-col items-center">
+        <!-- HUD Superior -->
+        <div class="w-full flex justify-between items-center mb-6 border-b border-green-900/50 pb-4 bg-black/50 p-4 rounded">
+            <button onclick="goHome()" class="text-red-500/70 hover:text-red-500 text-xs font-bold tracking-widest uppercase transition-colors flex items-center gap-2">
+                <i class="fas fa-power-off"></i> ABORTAR
+            </button>
+            <div class="text-center">
+                <span id="game-topic-title" class="text-green-500 font-black text-xl uppercase tracking-widest block glitch-text">TOPIC</span>
+                <div class="h-1 w-24 bg-gray-800 mx-auto mt-1 rounded overflow-hidden">
+                    <div id="progress-bar" class="h-full bg-green-500 w-0 transition-all duration-300"></div>
+                </div>
+            </div>
+            <span id="counter" class="text-green-500 font-mono text-xl font-bold">0/0</span>
+        </div>
+
+        <!-- Tarjeta Principal -->
+        <div class="w-full h-[500px] cursor-pointer card-flip mb-8 group perspective-1000 relative" onclick="flipCard()">
+            <div class="absolute -inset-1 bg-green-500/20 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+            <div class="card-inner">
+                <!-- FRENTE -->
+                <div class="card-front">
+                    <span id="card-level" class="level-badge lvl-basic">NIVEL 1</span>
+                    <h2 id="card-q" class="text-2xl md:text-4xl font-bold text-gray-100 mb-8 leading-tight max-w-xl">Cargando datos...</h2>
+                    
+                    <div class="mt-auto flex flex-col items-center gap-2">
+                        <div class="w-12 h-1 bg-green-600/50 rounded-full mb-2"></div>
+                        <p class="text-green-800 text-[10px] uppercase tracking-[0.3em] font-bold group-hover:text-green-500 transition-colors animate-pulse">
+                            [ SISTEMA LISTO - CLICK PARA ACCEDER ]
+                        </p>
+                    </div>
+                </div>
+                <!-- REVERSO -->
+                <div class="card-back">
+                    <div class="absolute top-6 left-0 w-full flex justify-center">
+                        <span class="text-green-500/50 text-[10px] font-bold uppercase tracking-[0.5em] border-b border-green-900 pb-1">Solución Clasificada</span>
+                    </div>
+                    
+                    <p id="card-a" class="text-2xl md:text-3xl font-bold text-white mb-8 leading-snug drop-shadow-lg">Respuesta...</p>
+                    
+                    <div class="bg-green-900/10 p-4 rounded border border-green-500/30 w-full max-w-lg">
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-info-circle text-green-500 mt-1"></i>
+                            <p id="card-expl" class="text-sm text-gray-300 italic leading-relaxed text-left">Explicación detallada...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controles -->
+        <div class="grid grid-cols-2 gap-6 w-full max-w-xl">
+            <button onclick="handleAnswer(false)" class="tactical-btn h-16 bg-red-950/20 hover:bg-red-900/60 border border-red-900/50 text-red-500 hover:text-red-100 transition-all uppercase text-sm font-black tracking-widest flex items-center justify-center gap-3 group">
+                <i class="fas fa-times text-lg group-hover:scale-125 transition-transform"></i> FALLO
+            </button>
+            <button onclick="handleAnswer(true)" class="tactical-btn h-16 bg-green-950/20 hover:bg-green-900/60 border border-green-900/50 text-green-500 hover:text-green-100 transition-all uppercase text-sm font-black tracking-widest flex items-center justify-center gap-3 group">
+                <i class="fas fa-check text-lg group-hover:scale-125 transition-transform"></i> ACIERTO
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA 3: RESULTADOS -->
+    <div id="end-screen" class="hidden text-center max-w-lg z-20">
+        <div class="mb-8 relative inline-block">
+            <div class="absolute inset-0 bg-green-500 blur-2xl opacity-20"></div>
+            <i class="fas fa-flag-checkered text-6xl text-green-500 relative z-10"></i>
+        </div>
+        
+        <h2 class="text-4xl font-black text-white mb-2 tracking-tighter">MISIÓN CUMPLIDA</h2>
+        <p class="text-gray-500 text-xs tracking-widest uppercase mb-8">Reporte de desempeño táctico</p>
+        
+        <div class="flex justify-center items-baseline gap-2 mb-8">
+            <span class="text-7xl font-black text-green-500 glitch-text" id="score-display">0%</span>
+        </div>
+        
+        <div id="feedback-container" class="bg-gray-900/80 border border-gray-700 p-6 rounded mb-8 shadow-xl">
+            <p id="feedback-msg" class="text-green-300 text-sm font-mono leading-relaxed"></p>
+        </div>
+
+        <div class="flex flex-col gap-4">
+            <button onclick="restartSameMode()" class="w-full bg-green-700 hover:bg-green-600 text-white font-black py-4 rounded uppercase text-sm shadow-[0_0_20px_rgba(21,128,61,0.4)] tracking-widest transition-all hover:scale-[1.02]">
+                <i class="fas fa-redo mr-2"></i> Reiniciar Mismo Repaso
+            </button>
+            <button onclick="goHome()" class="w-full border border-gray-700 text-gray-400 hover:bg-gray-800 hover:text-white font-bold py-3 rounded uppercase text-xs tracking-widest transition-all">
+                Volver al Cuartel General
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /* * ====================================================================================
+         * BASE DE DATOS MASIVA - ENTRENAMIENTO TÁCTICO EMI V3.0
+         * Fuentes: Baldor (Álgebra), Zill (Geo Analítica), Thomas (Cálculo)
+         * ====================================================================================
+         */
+        
+        const database = {
+            algebra: [
+                // --- NIVEL 1: FUNDAMENTOS Y DEFINICIONES (BALDOR) ---
+                { level: 1, q: "Ley de Signos: (-a) ÷ (-b) es igual a...", a: "+(a/b) (Positivo)", expl: "El cociente de dos cantidades negativas es positivo." },
+                { level: 1, q: "Definición de Términos Semejantes", a: "Misma parte literal (letras y exponentes iguales).", expl: "Solo difieren en el coeficiente numérico." },
+                { level: 1, q: "Grado Absoluto de 5x²y³", a: "Grado 5", expl: "Suma de exponentes: 2 + 3 = 5." },
+                { level: 1, q: "Valor de i^0", a: "1", expl: "Todo número (no nulo) elevado a la cero es 1." },
+                { level: 1, q: "Definición de |x| si x < 0", a: "-x", expl: "Si x es negativo (ej: -5), su valor absoluto es -(-5) = 5." },
+                { level: 1, q: "¿Qué es el M.C.D. de varias expresiones?", a: "La expresión de MAYOR grado que divide exactamente a todas.", expl: "Contiene los factores comunes con su MENOR exponente." },
+                { level: 1, q: "¿Qué es el m.c.m. de varias expresiones?", a: "La expresión de MENOR grado divisible por todas.", expl: "Factores comunes y no comunes con su MAYOR exponente." },
+                { level: 1, q: "Signo de una potencia par de base negativa (-a)^2n", a: "Positivo", expl: "Menos por menos es más." },
+                { level: 1, q: "Definición de ecuación de 1er grado", a: "El mayor exponente de la incógnita es 1.", expl: "Su gráfica es una recta." },
+                { level: 1, q: "¿Qué es una fracción algebraica propia?", a: "El grado del numerador es menor que el del denominador.", expl: "Similar a las fracciones numéricas propias." },
+                { level: 1, q: "Parte Real de z = 3 - 4i", a: "3", expl: "El número sin la unidad imaginaria." },
+                { level: 1, q: "Parte Imaginaria de z = 3 - 4i", a: "-4", expl: "El coeficiente que acompaña a la 'i'." },
+                { level: 1, q: "Inverso aditivo de x", a: "-x", expl: "El número que sumado a x da 0." },
+                { level: 1, q: "Inverso multiplicativo de x", a: "1/x", expl: "El número que multiplicado por x da 1." },
+                { level: 1, q: "Definición de Polinomio Homogéneo", a: "Todos sus términos tienen el mismo grado absoluto.", expl: "Ej: x² + xy + y² (Todos grado 2)." },
+                { level: 1, q: "¿Qué indica el discriminante de una ecuación cuadrática?", a: "La naturaleza de las raíces.", expl: "Si son reales, iguales o complejas." },
+                { level: 1, q: "Fórmula general de la ecuación cuadrática", a: "x = [-b ± √(b²-4ac)] / 2a", expl: "Fundamental para resolver ax² + bx + c = 0." },
+                { level: 1, q: "¿Qué es factorizar?", a: "Transformar una suma algebraica en un producto de factores.", expl: "Proceso inverso a los productos notables." },
+                { level: 1, q: "Definición de número primo", a: "Solo divisible por sí mismo y por la unidad.", expl: "2, 3, 5, 7, 11..." },
+                { level: 1, q: "Elemento neutro de la suma", a: "0", expl: "a + 0 = a." },
+                { level: 1, q: "Elemento neutro de la multiplicación", a: "1", expl: "a * 1 = a." },
+
+                // --- NIVEL 2: PRODUCTOS NOTABLES Y FACTORIZACIÓN (BALDOR) ---
+                { level: 2, q: "Producto Notable: (a + b)(a - b)", a: "a² - b²", expl: "Diferencia de cuadrados perfectos." },
+                { level: 2, q: "Factorizar: x² + 2xy + y²", a: "(x + y)²", expl: "Trinomio Cuadrado Perfecto." },
+                { level: 2, q: "Producto Notable: (x + a)(x + b)", a: "x² + (a+b)x + ab", expl: "Producto de binomios con término común." },
+                { level: 2, q: "Factorizar: a³ - b³", a: "(a - b)(a² + ab + b²)", expl: "Diferencia de cubos." },
+                { level: 2, q: "Factorizar: a³ + b³", a: "(a + b)(a² - ab + b²)", expl: "Suma de cubos." },
+                { level: 2, q: "Desarrollo de (a + b)³", a: "a³ + 3a²b + 3ab² + b³", expl: "Cubo de un binomio." },
+                { level: 2, q: "Factor común de: 2a²x + 6ax²", a: "2ax", expl: "MCD de coeficientes (2) y letras comunes con menor exponente (ax)." },
+                { level: 2, q: "Si (x-2) es factor de P(x), ¿cuánto vale P(2)?", a: "0", expl: "Teorema del Residuo/Factor." },
+                { level: 2, q: "¿Cómo racionalizar 1/√x?", a: "Multiplicar numerador y denominador por √x.", expl: "Resultado: √x / x." },
+                { level: 2, q: "¿Cómo racionalizar 1/(√a - √b)?", a: "Multiplicar por el conjugado (√a + √b).", expl: "Para formar una diferencia de cuadrados abajo." },
+                { level: 2, q: "Valor de i^3", a: "-i", expl: "i² * i = (-1) * i = -i." },
+                { level: 2, q: "Valor de i^4", a: "1", expl: "(i²)² = (-1)² = 1." },
+                { level: 2, q: "Módulo de z = 3 + 4i", a: "5", expl: "√(3² + 4²) = √25 = 5." },
+                { level: 2, q: "Conjugado de z = a + bi", a: "a - bi", expl: "Cambia el signo de la parte imaginaria." },
+                { level: 2, q: "Propiedad: (a*b)^n", a: "a^n * b^n", expl: "Potencia de un producto." },
+                { level: 2, q: "Propiedad: a^m / a^n", a: "a^(m-n)", expl: "División de potencias de igual base." },
+                { level: 2, q: "Propiedad: a^-n", a: "1/a^n", expl: "Exponente negativo invierte la base." },
+                { level: 2, q: "Propiedad: (a/b)^-1", a: "b/a", expl: "Invierte la fracción." },
+                { level: 2, q: "Si log(x) = y, entonces...", a: "10^y = x", expl: "Definición de logaritmo (base 10 implícita)." },
+                { level: 2, q: "log(a*b) es igual a...", a: "log(a) + log(b)", expl: "Logaritmo de un producto es suma de logaritmos." },
+
+                // --- NIVEL 3: TRAMPAS Y ANÁLISIS (BALDOR) ---
+                { level: 3, q: "¿Es (a+b)² = a² + b²?", a: "FALSO", expl: "Falta el término 2ab. Error clásico." },
+                { level: 3, q: "¿√x² siempre es x?", a: "FALSO", expl: "Es |x|. Si x=-3, √(-3)² = 3, no -3." },
+                { level: 3, q: "¿Un sistema incompatible tiene solución única?", a: "FALSO", expl: "No tiene solución (rectas paralelas)." },
+                { level: 3, q: "¿Un sistema compatible indeterminado tiene infinitas soluciones?", a: "VERDADERO", expl: "Las ecuaciones representan la misma recta." },
+                { level: 3, q: "¿Se puede dividir por cero?", a: "NO", expl: "Indefinido en los reales." },
+                { level: 3, q: "Si x² = 4, ¿x es solo 2?", a: "FALSO", expl: "x puede ser 2 o -2." },
+                { level: 3, q: "¿0 es un número complejo?", a: "VERDADERO", expl: "Es 0 + 0i. Los reales son subconjunto de los complejos." },
+                { level: 3, q: "Si a > b, ¿entonces ac > bc?", a: "SOLO SI c > 0", expl: "Si c es negativo, la desigualdad se invierte." },
+                { level: 3, q: "¿(a+b)⁻¹ = 1/a + 1/b?", a: "FALSO", expl: "Es 1/(a+b). No distribuye." },
+                { level: 3, q: "¿El grado de P(x) + Q(x) es la suma de los grados?", a: "FALSO", expl: "Es el mayor de los dos grados (o menor si se cancelan términos)." },
+                { level: 3, q: "¿La suma de dos irracionales siempre es irracional?", a: "FALSO", expl: "√2 + (-√2) = 0 (Racional)." },
+                { level: 3, q: "¿i es positivo o negativo?", a: "NO TIENE ORDEN", expl: "Los complejos no son un cuerpo ordenado." },
+                { level: 3, q: "En ax²+bx+c=0, si a=0...", a: "Deja de ser cuadrática", expl: "Se vuelve lineal (bx+c=0)." },
+                { level: 3, q: "Si el discriminante es 0, las raíces son...", a: "Reales e Iguales", expl: "La parábola toca el eje X en un solo punto (vértice)." },
+                { level: 3, q: "El dominio natural de √x es...", a: "x ≥ 0", expl: "No existen raíces pares de negativos en R." }
+            ],
+
+            geo: [
+                // --- NIVEL 1: DEFINICIONES Y COORDENADAS (ZILL) ---
+                { level: 1, q: "Eje de las abscisas", a: "Eje X", expl: "El eje horizontal." },
+                { level: 1, q: "Eje de las ordenadas", a: "Eje Y", expl: "El eje vertical." },
+                { level: 1, q: "Cuadrante (+, +)", a: "I Cuadrante", expl: "Arriba derecha." },
+                { level: 1, q: "Cuadrante (-, +)", a: "II Cuadrante", expl: "Arriba izquierda." },
+                { level: 1, q: "Cuadrante (-, -)", a: "III Cuadrante", expl: "Abajo izquierda." },
+                { level: 1, q: "Cuadrante (+, -)", a: "IV Cuadrante", expl: "Abajo derecha." },
+                { level: 1, q: "Punto donde se cruzan los ejes", a: "Origen (0,0)", expl: "Referencia del sistema." },
+                { level: 1, q: "Distancia de P(x,y) al origen", a: "√(x² + y²)", expl: "Pitágoras directo." },
+                { level: 1, q: "En polares (r, θ), r representa...", a: "Distancia dirigida desde el polo.", expl: "Radio vector." },
+                { level: 1, q: "En polares (r, θ), θ representa...", a: "Ángulo dirigido desde eje polar.", expl: "Argumento." },
+                { level: 1, q: "Conversión Polar: x =", a: "r cos(θ)", expl: "Proyección en X." },
+                { level: 1, q: "Conversión Polar: y =", a: "r sen(θ)", expl: "Proyección en Y." },
+                { level: 1, q: "Conversión Rectangular: r² =", a: "x² + y²", expl: "Hipotenusa al cuadrado." },
+                { level: 1, q: "Conversión Rectangular: tan(θ) =", a: "y/x", expl: "Pendiente del radio vector." },
+                { level: 1, q: "Definición de Seno (Triángulo Rect.)", a: "Opuesto / Hipotenusa", expl: "SOH." },
+                { level: 1, q: "Definición de Coseno (Triángulo Rect.)", a: "Adyacente / Hipotenusa", expl: "CAH." },
+                { level: 1, q: "Definición de Tangente (Triángulo Rect.)", a: "Opuesto / Adyacente", expl: "TOA." },
+                { level: 1, q: "Cosecante es recíproca de...", a: "Seno", expl: "csc(x) = 1/sen(x)." },
+                { level: 1, q: "Secante es recíproca de...", a: "Coseno", expl: "sec(x) = 1/cos(x)." },
+                { level: 1, q: "Cotangente es recíproca de...", a: "Tangente", expl: "cot(x) = 1/tan(x)." },
+
+                // --- NIVEL 2: RELACIONES Y GRÁFICAS (ZILL) ---
+                { level: 2, q: "Identidad Pitagórica Fundamental", a: "sen²x + cos²x = 1", expl: "Base de la trigonometría." },
+                { level: 2, q: "Identidad: 1 + tan²x =", a: "sec²x", expl: "Dividiendo la fundamental por cos²x." },
+                { level: 2, q: "Identidad: 1 + cot²x =", a: "csc²x", expl: "Dividiendo la fundamental por sen²x." },
+                { level: 2, q: "Seno de (90° - x)", a: "cos(x)", expl: "Cofunción (ángulo complementario)." },
+                { level: 2, q: "sen(2x) =", a: "2sen(x)cos(x)", expl: "Ángulo doble." },
+                { level: 2, q: "cos(2x) =", a: "cos²x - sen²x", expl: "Ángulo doble (forma básica)." },
+                { level: 2, q: "Gráfica de r = 3", a: "Círculo radio 3 centrado en origen", expl: "Radio constante." },
+                { level: 2, q: "Gráfica de θ = π/3", a: "Recta por el origen a 60°", expl: "Ángulo constante." },
+                { level: 2, q: "Simetría polar: Si (r, θ) y (r, -θ) están en la gráfica...", a: "Simetría respecto al eje polar (X).", expl: "Arriba igual que abajo." },
+                { level: 2, q: "Simetría polar: Si (r, θ) y (-r, θ) están...", a: "Simetría respecto al polo (Origen).", expl: "Opuestos por el vértice." },
+                { level: 2, q: "Valor de sen(0)", a: "0", expl: "Altura cero en círculo unitario." },
+                { level: 2, q: "Valor de cos(0)", a: "1", expl: "Radio completo en X." },
+                { level: 2, q: "Valor de sen(90°)", a: "1", expl: "Altura máxima." },
+                { level: 2, q: "Valor de cos(90°)", a: "0", expl: "Proyección cero en X." },
+                { level: 2, q: "Signo de Seno en II Cuadrante", a: "Positivo", expl: "Y es positivo arriba." },
+                { level: 2, q: "Signo de Coseno en II Cuadrante", a: "Negativo", expl: "X es negativo a la izquierda." },
+                { level: 2, q: "Periodo de sen(x) y cos(x)", a: "2π (360°)", expl: "Se repiten cada vuelta." },
+                { level: 2, q: "Periodo de tan(x)", a: "π (180°)", expl: "Se repite cada media vuelta." },
+                { level: 2, q: "Distancia entre P1(x1,y1) y P2(x2,y2)", a: "√[(x2-x1)²+(y2-y1)²]", expl: "Fórmula de distancia." },
+                { level: 2, q: "Punto medio de segmento", a: "((x1+x2)/2, (y1+y2)/2)", expl: "Promedio de coordenadas." },
+
+                // --- NIVEL 3: TRAMPAS Y ANÁLISIS (ZILL) ---
+                { level: 3, q: "¿sen(x+y) = sen(x) + sen(y)?", a: "FALSO", expl: "Es sen(x)cos(y) + cos(x)sen(y)." },
+                { level: 3, q: "¿(r, θ) es único para un punto?", a: "FALSO", expl: "(r, θ) = (r, θ+2π) = (-r, θ+π)." },
+                { level: 3, q: "¿tan(90°) existe?", a: "NO", expl: "Es sen(90)/cos(90) = 1/0 (Indefinido)." },
+                { level: 3, q: "Si r < 0 en polares, ¿dónde se dibuja?", a: "Dirección opuesta al rayo θ", expl: "A través del origen." },
+                { level: 3, q: "¿sen(x) puede valer 2?", a: "NO", expl: "Rango de seno es [-1, 1]." },
+                { level: 3, q: "¿sec(x) puede valer 0.5?", a: "NO", expl: "Rango de secante es (-inf, -1] U [1, inf). (Hipotenusa > Adyacente)." },
+                { level: 3, q: "¿r = 2cos(θ) es una recta?", a: "NO, es un círculo", expl: "Círculo desplazado a la derecha." },
+                { level: 3, q: "En polares, ¿el polo tiene ángulo único?", a: "NO", expl: "Para r=0, θ puede ser cualquiera." },
+                { level: 3, q: "Pendiente de recta vertical", a: "Indefinida", expl: "División por cero (Δx=0)." },
+                { level: 3, q: "Pendiente de recta horizontal", a: "0", expl: "No sube ni baja (Δy=0)." },
+                { level: 3, q: "Si m = tan(135°), la pendiente es...", a: "-1", expl: "II cuadrante, ángulo referencia 45°." },
+                { level: 3, q: "sen²x = (sen x)²", a: "VERDADERO", expl: "Notación estándar." },
+                { level: 3, q: "sen⁻¹x = 1/sen x", a: "FALSO", expl: "sen⁻¹x es Arcoseno (función inversa). 1/sen x es Cosecante (recíproca)." },
+                { level: 3, q: "¿La distancia es siempre positiva?", a: "VERDADERO (o cero)", expl: "Por definición es una magnitud no negativa." },
+                { level: 3, q: "Si x² + y² = 0, ¿qué gráfica es?", a: "Un punto (0,0)", expl: "Única solución real." }
+            ],
+
+            calculo: [
+                // --- NIVEL 1: DEFINICIONES (THOMAS) ---
+                { level: 1, q: "Definición informal de Límite", a: "A qué valor se acerca f(x) cuando x se acerca a c.", expl: "Tendencia, no valor exacto." },
+                { level: 1, q: "Límite lateral izquierdo", a: "x -> c⁻ (valores menores a c)", expl: "Acercarse desde la izquierda." },
+                { level: 1, q: "Límite lateral derecho", a: "x -> c⁺ (valores mayores a c)", expl: "Acercarse desde la derecha." },
+                { level: 1, q: "Condición de existencia de Límite", a: "Límite izq = Límite der", expl: "Ambos laterales deben ser iguales y finitos." },
+                { level: 1, q: "Definición de Función Continua", a: "Límite = Valor de la función", expl: "Trazo sin interrupciones." },
+                { level: 1, q: "Discontinuidad removible", a: "El límite existe, pero f(c) es distinto o no existe.", expl: "Un 'hueco' en la gráfica." },
+                { level: 1, q: "Discontinuidad de salto", a: "Límites laterales distintos.", expl: "La gráfica salta de un valor a otro." },
+                { level: 1, q: "Discontinuidad infinita", a: "Algún lateral tiende a infinito.", expl: "Asíntota vertical." },
+                { level: 1, q: "Definición de Derivada f'(x)", a: "lim(h->0) [f(x+h) - f(x)] / h", expl: "Cociente incremental." },
+                { level: 1, q: "Interpretación geométrica de f'(a)", a: "Pendiente de la recta tangente en x=a.", expl: "Inclinación de la curva." },
+                { level: 1, q: "Interpretación física de f'(t) (posición)", a: "Velocidad instantánea", expl: "Razón de cambio de posición." },
+                { level: 1, q: "Derivada de constante: d/dx (k)", a: "0", expl: "No cambia." },
+                { level: 1, q: "Derivada de identidad: d/dx (x)", a: "1", expl: "Pendiente constante de 1." },
+                { level: 1, q: "Derivada de potencia: d/dx (x^n)", a: "n * x^(n-1)", expl: "Regla de la potencia." },
+                { level: 1, q: "Derivada de suma: (f+g)'", a: "f' + g'", expl: "Linealidad de la derivada." },
+                { level: 1, q: "Derivada de sen(x)", a: "cos(x)", expl: "Básica." },
+                { level: 1, q: "Derivada de cos(x)", a: "-sen(x)", expl: "Ojo con el signo menos." },
+                { level: 1, q: "Derivada de e^x", a: "e^x", expl: "La función inmortal." },
+                { level: 1, q: "Derivada de ln(x)", a: "1/x", expl: "Para x > 0." },
+                { level: 1, q: "Notación de Leibniz para derivada", a: "dy/dx", expl: "Diferencial de y sobre diferencial de x." },
+
+                // --- NIVEL 2: REGLAS Y TEOREMAS (THOMAS) ---
+                { level: 2, q: "Regla del Producto: (uv)'", a: "u'v + uv'", expl: "El primero derivado por el segundo..." },
+                { level: 2, q: "Regla del Cociente: (u/v)'", a: "(u'v - uv') / v²", expl: "Importante el orden y el menos." },
+                { level: 2, q: "Regla de la Cadena: [f(g(x))]'", a: "f'(g(x)) * g'(x)", expl: "Derivar de afuera hacia adentro." },
+                { level: 2, q: "Derivada implícita de y²", a: "2y * y'", expl: "Regla de la cadena aplicada a y(x)." },
+                { level: 2, q: "Límite fundamental: lim(x->0) sen(x)/x", a: "1", expl: "Base para derivadas trigonométricas." },
+                { level: 2, q: "Límite fundamental: lim(x->0) (1-cos x)/x", a: "0", expl: "Otro clásico." },
+                { level: 2, q: "Teorema del Valor Intermedio", a: "Si f continua [a,b], toma todos los valores entre f(a) y f(b).", expl: "Garantiza cruces por cero." },
+                { level: 2, q: "Teorema de Squeeze (Sándwich)", a: "Si g < f < h y g,h van a L, f va a L.", expl: "Atrapada entre dos funciones." },
+                { level: 2, q: "Si f'(x) > 0 en intervalo", a: "f es Creciente", expl: "Sube de izquierda a derecha." },
+                { level: 2, q: "Si f'(x) < 0 en intervalo", a: "f es Decreciente", expl: "Baja." },
+                { level: 2, q: "Si f''(x) > 0", a: "Cóncava hacia Arriba (U)", expl: "Sonríe." },
+                { level: 2, q: "Si f''(x) < 0", a: "Cóncava hacia Abajo (n)", expl: "Triste." },
+                { level: 2, q: "Punto Crítico", a: "f'(c) = 0 o f'(c) no existe", expl: "Candidato a extremo." },
+                { level: 2, q: "Punto de Inflexión", a: "Cambio de concavidad", expl: "Donde f'' cambia de signo." },
+                { level: 2, q: "Derivada de tan(x)", a: "sec²(x)", expl: "Identidad derivada." },
+                { level: 2, q: "Derivada de cot(x)", a: "-csc²(x)", expl: "Negativa." },
+                { level: 2, q: "Derivada de sec(x)", a: "sec(x)tan(x)", expl: "Producto de ella misma por tan." },
+                { level: 2, q: "Derivada de csc(x)", a: "-csc(x)cot(x)", expl: "Negativa producto." },
+                { level: 2, q: "Velocidad promedio", a: "Δs / Δt", expl: "Cambio total entre tiempo total." },
+                { level: 2, q: "Aceleración a(t)", a: "v'(t) o s''(t)", expl: "Derivada de velocidad." },
+
+                // --- NIVEL 3: TRAMPAS Y ANÁLISIS (THOMAS) ---
+                { level: 3, q: "¿Continuidad implica Derivabilidad?", a: "FALSO", expl: "Ej: |x| en 0 es continua pero no derivable (pico)." },
+                { level: 3, q: "¿Derivabilidad implica Continuidad?", a: "VERDADERO", expl: "Si es suave, no puede estar rota." },
+                { level: 3, q: "Si lim f(x) = inf, ¿el límite existe?", a: "NO (formalmente)", expl: "Crece sin cota. No es un número real." },
+                { level: 3, q: "lim(x->0) 1/x", a: "No existe", expl: "Por derecha es +inf, por izquierda -inf." },
+                { level: 3, q: "lim(x->0) 1/x²", a: "+Infinito", expl: "Ambos lados van arriba." },
+                { level: 3, q: "Si f'(c)=0, ¿es máximo o mínimo?", a: "NO SE SABE", expl: "Puede ser punto de inflexión (x³ en 0). Test de 2da derivada." },
+                { level: 3, q: "Derivada de f(x) = x^x", a: "x^x * (1 + ln x)", expl: "Requiere derivación logarítmica." },
+                { level: 3, q: "Derivada de a^x", a: "a^x * ln(a)", expl: "No olvidar ln(base)." },
+                { level: 3, q: "¿Puede una función cruzar su asíntota horizontal?", a: "SÍ", expl: "La asíntota es el comportamiento en infinito, en el medio puede cruzarla." },
+                { level: 3, q: "¿Puede cruzar su asíntota vertical?", a: "JAMÁS", expl: "La función no está definida allí o explota." },
+                { level: 3, q: "d/dx [ integral de a a x de f(t)dt ]", a: "f(x)", expl: "Teorema Fundamental del Cálculo (Parte 1)." },
+                { level: 3, q: "¿L'Hopital se aplica siempre?", a: "SOLO en 0/0 o inf/inf", expl: "Si no es indeterminada, da error." },
+                { level: 3, q: "Límite de sen(1/x) cuando x->0", a: "No existe", expl: "Oscila infinitamente entre -1 y 1." },
+                { level: 3, q: "Límite de x*sen(1/x) cuando x->0", a: "0", expl: "Por Teorema del Sándwich." },
+                { level: 3, q: "Si f''(c)=0, ¿es inflexión?", a: "NO NECESARIAMENTE", expl: "Debe haber cambio de signo (ej: x^4 en 0 no es inflexión)." }
+            ]
+        };
+
+        // --- LÓGICA DEL SISTEMA ---
+        let currentMode = [];
+        let currentIndex = 0;
+        let score = 0;
+        let currentTopicId = "";
+        let currentReviewType = ""; // '10', '20', '30', 'all'
+
+        function openModeSelection(topicId) {
+            currentTopicId = topicId;
+            const titles = { algebra: "ÁLGEBRA", geo: "GEO. ANALÍTICA", calculo: "CÁLCULO" };
+            document.getElementById('modal-title').innerText = "MISIÓN: " + titles[topicId];
+            
+            const modal = document.getElementById('mode-modal');
+            modal.classList.remove('hidden');
+            // Timeout para permitir la transición de opacidad
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        }
+
+        function closeModeModal() {
+            const modal = document.getElementById('mode-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        function startGame(count) {
+            closeModeModal();
+            currentReviewType = count;
+            
+            // 1. Obtener todas las preguntas del tema
+            let questions = [...database[currentTopicId]];
+            
+            // 2. Barajar aleatoriamente (Algoritmo Fisher-Yates simplificado)
+            questions.sort(() => Math.random() - 0.5);
+            
+            // 3. Recortar según selección
+            if (count !== 'all') {
+                questions = questions.slice(0, parseInt(count));
+            }
+            
+            currentMode = questions;
+            currentIndex = 0;
+            score = 0;
+            
+            // UI Switch
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('game-screen').classList.add('flex');
+            
+            // Setup Header
+            const titles = { algebra: "ÁLGEBRA (BALDOR)", geo: "GEO. ANALÍTICA (ZILL)", calculo: "CÁLCULO (THOMAS)" };
+            document.getElementById('game-topic-title').innerText = titles[currentTopicId];
+            
+            updateProgressBar();
+            loadCard();
+        }
+
+        function loadCard() {
+            const cardData = currentMode[currentIndex];
+            const cardEl = document.querySelector('.card-flip');
+            
+            // Reset Flip
+            cardEl.classList.remove('flipped');
+            
+            // Actualizar contenido con delay para que no se vea el cambio antes de girar (si aplica)
+            setTimeout(() => {
+                document.getElementById('counter').innerText = `${currentIndex + 1}/${currentMode.length}`;
+                
+                // Texto de pregunta
+                document.getElementById('card-q').innerText = cardData.q;
+                
+                // Texto de respuesta
+                document.getElementById('card-a').innerText = cardData.a;
+                document.getElementById('card-expl').innerText = cardData.expl;
+
+                // Badge de Nivel
+                const badge = document.getElementById('card-level');
+                badge.className = 'level-badge'; // reset clases base
+                if(cardData.level === 1) { badge.classList.add('lvl-basic'); badge.innerText = "NIVEL 1 // BÁSICO"; }
+                if(cardData.level === 2) { badge.classList.add('lvl-inter'); badge.innerText = "NIVEL 2 // INTERMEDIO"; }
+                if(cardData.level === 3) { badge.classList.add('lvl-adv'); badge.innerText = "NIVEL 3 // AVANZADO"; }
+                
+                updateProgressBar();
+            }, 200);
+        }
+
+        function flipCard() {
+            document.querySelector('.card-flip').classList.toggle('flipped');
+        }
+
+        function handleAnswer(isCorrect) {
+            if(isCorrect) score++;
+            
+            currentIndex++;
+            if(currentIndex < currentMode.length) {
+                loadCard();
+            } else {
+                showEndScreen();
+            }
+        }
+
+        function updateProgressBar() {
+            const progress = ((currentIndex) / currentMode.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+        }
+
+        function showEndScreen() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('flex');
+            document.getElementById('end-screen').classList.remove('hidden');
+            
+            const percentage = Math.round((score / currentMode.length) * 100);
+            const scoreDisplay = document.getElementById('score-display');
+            scoreDisplay.innerText = `${percentage}%`;
+            
+            // Color coding del resultado
+            if(percentage >= 90) scoreDisplay.className = "text-7xl font-black text-green-500 glitch-text";
+            else if(percentage >= 70) scoreDisplay.className = "text-7xl font-black text-yellow-500";
+            else scoreDisplay.className = "text-7xl font-black text-red-600";
+            
+            const feedbackMsg = document.getElementById('feedback-msg');
+            if(percentage === 100) feedbackMsg.innerText = "OPERACIÓN IMPECABLE. HAS DOMINADO ESTE SECTOR.";
+            else if(percentage >= 80) feedbackMsg.innerText = "BUEN TRABAJO, CADETE. NIVEL ACEPTABLE PARA COMBATE.";
+            else if(percentage >= 60) feedbackMsg.innerText = "ZONA DE RIESGO. SE REQUIERE REFUERZO INMEDIATO.";
+            else feedbackMsg.innerText = "FALLO CRÍTICO DEL SISTEMA. REPETIR ENTRENAMIENTO OBLIGATORIO.";
+        }
+
+        function restartSameMode() {
+            startGame(currentReviewType);
+        }
+
+        function goHome() {
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('flex');
+            document.getElementById('start-screen').classList.remove('hidden');
+            document.getElementById('start-screen').classList.remove('opacity-0');
+        }
+    </script>
+</body>
+</html>

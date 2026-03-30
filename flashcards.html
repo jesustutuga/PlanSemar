@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcards - Plan SEMAR v2.6</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #000000; 
+            color: #F3F4F6;
+            background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.9)), url('fondo.webp');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        .main-button, .topic-button, .difficulty-btn, .option-btn { 
+            transition: all 0.2s ease-in-out; 
+        }
+        .main-button:hover, .topic-button:hover, .difficulty-btn:hover, .option-btn:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 12px rgba(156, 163, 175, 0.1); 
+        }
+        .flashcard-container { perspective: 1000px; }
+        .flashcard { width: 100%; height: 300px; position: relative; transform-style: preserve-3d; transition: transform 0.6s; cursor: pointer; }
+        .flashcard.is-flipped { transform: rotateY(180deg); }
+        .flashcard-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; text-align: center; padding: 2rem; border-radius: 1rem; border: 1px solid #374151; }
+        .flashcard-front { background-color: rgba(17, 24, 39, 0.8); backdrop-filter: blur(4px); }
+        .flashcard-back { background-color: rgba(31, 41, 55, 0.8); backdrop-filter: blur(4px); transform: rotateY(180deg); }
+        .feedback-btn { transition: all 0.2s ease-in-out; }
+        .feedback-btn:hover { transform: scale(1.05); }
+        .transparent-btn {
+            background-color: rgba(17, 24, 39, 0.6); 
+            border: 1px solid rgba(55, 65, 81, 0.8);
+        }
+        .transparent-btn:hover {
+            background-color: rgba(31, 41, 55, 0.8); 
+            border-color: rgba(75, 85, 99, 1);
+        }
+    </style>
+</head>
+<body class="antialiased p-4 md:p-8">
+    <div id="app-container" class="container mx-auto max-w-7xl">
+        
+        <div id="topic-selection-screen" class="min-h-[80vh] flex flex-col justify-center">
+            <header class="mb-10 text-center">
+                <h1 class="text-4xl md:text-5xl font-bold text-white">Flashcards de Repaso</h1>
+                <p class="text-xl text-gray-400 mt-2">Selecciona un tema o mezcla todas las tarjetas.</p>
+            </header>
+             <div class="w-full max-w-4xl mx-auto flex justify-center space-x-4 mb-6">
+                <a href="index.html" class="main-button transparent-btn text-white font-bold py-3 px-6 rounded-lg text-lg flex items-center justify-center w-1/2">&larr; Plan SEMAR</a>
+                <a href="englishstudyhub.html" class="main-button transparent-btn text-white font-bold py-3 px-6 rounded-lg text-lg flex items-center justify-center w-1/2">English Study Hub &rarr;</a>
+            </div>
+            <div class="w-full max-w-4xl mx-auto text-center mb-10">
+                <button id="shuffle-flashcards-btn" class="main-button transparent-btn text-white font-bold py-4 px-8 rounded-lg text-xl w-full md:w-3/4">
+                    🧠 Repaso General (Shuffle)
+                </button>
+            </div>
+            <div id="flashcard-topics-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto w-full"></div>
+        </div>
+
+        <div id="flashcard-review-screen" class="hidden min-h-[80vh] flex flex-col items-center justify-center">
+            <button id="back-to-topics-btn" class="absolute top-6 right-6 bg-gray-800 hover:bg-gray-700 font-bold py-2 px-4 rounded-lg z-10">&larr; Terminar Repaso</button>
+            <div class="w-full max-w-2xl px-4 text-center">
+                <h2 id="flashcard-topic-title" class="text-3xl font-bold text-white mb-8"></h2>
+                <div class="flashcard-container">
+                    <div id="flashcard" class="flashcard">
+                        <div id="flashcard-front" class="flashcard-face flashcard-front"><p class="text-3xl font-semibold"></p></div>
+                        <div id="flashcard-back" class="flashcard-face flashcard-back"><p class="text-xl"></p></div>
+                    </div>
+                </div>
+                <div class="mt-8">
+                    <p id="flashcard-counter" class="text-gray-400 mb-4"></p>
+                    <div class="flex justify-center items-center space-x-4 mb-6">
+                        <button id="prev-card-btn" class="bg-gray-700 hover:bg-gray-600 font-bold py-3 px-6 rounded-lg disabled:opacity-50">&larr;</button>
+                        <button id="flip-card-btn" class="bg-sky-700 hover:bg-sky-600 text-white font-bold py-3 px-8 rounded-lg text-lg">Girar</button>
+                        <button id="next-card-btn" class="bg-gray-700 hover:bg-gray-600 font-bold py-3 px-6 rounded-lg disabled:opacity-50">&rarr;</button>
+                    </div>
+                    <div id="feedback-buttons" class="flex justify-center items-center space-x-4 h-14 invisible">
+                        <button id="fail-btn" class="feedback-btn bg-red-800 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg">❌ Fallé</button>
+                        <button id="success-btn" class="feedback-btn bg-green-800 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg">✅ Acerté</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="summary-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl p-8 max-w-md w-full text-center">
+                <h3 class="text-2xl font-bold text-white mb-4">Resumen del Repaso</h3>
+                <div class="space-y-3 text-lg">
+                    <p>Aciertos: <span id="correct-count" class="font-bold text-green-400"></span></p>
+                    <p>Fallos: <span id="fail-count" class="font-bold text-red-400"></span></p>
+                    <p>Total: <span id="total-count" class="font-bold text-white"></span></p>
+                </div>
+                <button id="summary-close-btn" class="mt-6 w-full bg-sky-700 hover:bg-sky-600 text-white font-bold py-2 rounded-lg">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="flashcards.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const topicSelectionScreen = document.getElementById('topic-selection-screen');
+            const flashcardReviewScreen = document.getElementById('flashcard-review-screen');
+            const flashcardTopicsGrid = document.getElementById('flashcard-topics-grid');
+            const flashcardTopicTitle = document.getElementById('flashcard-topic-title');
+            const backToTopicsBtn = document.getElementById('back-to-topics-btn');
+            const flashcard = document.getElementById('flashcard');
+            const flashcardFrontText = document.querySelector('#flashcard-front p');
+            const flashcardBackText = document.querySelector('#flashcard-back p');
+            const flashcardCounter = document.getElementById('flashcard-counter');
+            const prevCardBtn = document.getElementById('prev-card-btn');
+            const flipCardBtn = document.getElementById('flip-card-btn');
+            const nextCardBtn = document.getElementById('next-card-btn');
+            const feedbackButtons = document.getElementById('feedback-buttons');
+            const failBtn = document.getElementById('fail-btn');
+            const successBtn = document.getElementById('success-btn');
+            const summaryModal = document.getElementById('summary-modal');
+            const correctCountEl = document.getElementById('correct-count');
+            const failCountEl = document.getElementById('fail-count');
+            const totalCountEl = document.getElementById('total-count');
+            const summaryCloseBtn = document.getElementById('summary-close-btn');
+            const shuffleFlashcardsBtn = document.getElementById('shuffle-flashcards-btn');
+
+            let currentDeck = [], currentCardIndex = 0, correctCount = 0, failCount = 0;
+
+            function showScreen(screenId) {
+                topicSelectionScreen.classList.add('hidden');
+                flashcardReviewScreen.classList.add('hidden');
+                document.getElementById(screenId).classList.remove('hidden');
+            }
+
+            function displayTopics() {
+                flashcardTopicsGrid.innerHTML = '';
+                Object.keys(flashcardData).forEach(topic => {
+                    const btn = document.createElement('button');
+                    btn.className = 'topic-button text-white font-bold py-8 rounded-lg text-xl transparent-btn';
+                    btn.textContent = topic;
+                    btn.onclick = () => startReview(topic);
+                    flashcardTopicsGrid.appendChild(btn);
+                });
+            }
+
+            function startReview(topic) {
+                flashcardTopicTitle.textContent = topic;
+                currentDeck = [...flashcardData[topic]].sort(() => Math.random() - 0.5);
+                currentCardIndex = 0; correctCount = 0; failCount = 0;
+                displayCard();
+                showScreen('flashcard-review-screen');
+            }
+
+            function startShuffleReview() {
+                let allCards = [];
+                for (const topic in flashcardData) { allCards.push(...flashcardData[topic]); }
+                flashcardTopicTitle.textContent = 'Repaso General';
+                currentDeck = [...allCards].sort(() => Math.random() - 0.5);
+                currentCardIndex = 0; correctCount = 0; failCount = 0;
+                displayCard();
+                showScreen('flashcard-review-screen');
+            }
+
+            function displayCard() {
+                if (currentDeck.length === 0) return;
+                flashcard.classList.remove('is-flipped');
+                feedbackButtons.classList.add('invisible');
+                const card = currentDeck[currentCardIndex];
+                flashcardFrontText.textContent = card.front;
+                flashcardBackText.textContent = card.back;
+                flashcardCounter.textContent = `${currentCardIndex + 1} / ${currentDeck.length}`;
+                prevCardBtn.disabled = currentCardIndex === 0;
+                nextCardBtn.disabled = currentCardIndex === currentDeck.length - 1;
+                prevCardBtn.classList.toggle('opacity-50', prevCardBtn.disabled);
+                nextCardBtn.classList.toggle('opacity-50', nextCardBtn.disabled);
+            }
+
+            function flipCard() {
+                flashcard.classList.toggle('is-flipped');
+                feedbackButtons.classList.toggle('invisible');
+            }
+
+            function recordFeedback(isCorrect) {
+                if (isCorrect) correctCount++; else failCount++;
+                if (currentCardIndex < currentDeck.length - 1) nextCard();
+                else showSummary();
+            }
+
+            function nextCard() { if (currentCardIndex < currentDeck.length - 1) { currentCardIndex++; displayCard(); } }
+            function prevCard() { if (currentCardIndex > 0) { currentCardIndex--; displayCard(); } }
+
+            function showSummary() {
+                correctCountEl.textContent = correctCount;
+                failCountEl.textContent = failCount;
+                totalCountEl.textContent = currentDeck.length;
+                summaryModal.classList.remove('hidden');
+            }
+
+            function hideSummary() {
+                summaryModal.classList.add('hidden');
+                showScreen('topic-selection-screen');
+            }
+
+            displayTopics();
+            flipCardBtn.addEventListener('click', flipCard);
+            flashcard.addEventListener('click', flipCard);
+            nextCardBtn.addEventListener('click', nextCard);
+            prevCardBtn.addEventListener('click', prevCard);
+            backToTopicsBtn.addEventListener('click', showSummary);
+            summaryCloseBtn.addEventListener('click', hideSummary);
+            failBtn.addEventListener('click', () => recordFeedback(false));
+            successBtn.addEventListener('click', () => recordFeedback(true));
+            shuffleFlashcardsBtn.addEventListener('click', startShuffleReview);
+            
+            document.addEventListener('keydown', (e) => {
+                if (flashcardReviewScreen.classList.contains('hidden')) return;
+                if (e.key === 'ArrowRight' && !nextCardBtn.disabled) nextCard();
+                if (e.key === 'ArrowLeft' && !prevCardBtn.disabled) prevCard();
+                if (e.key === ' ') { e.preventDefault(); flipCard(); }
+            });
+        });
+    </script>
+</body>
+</html>

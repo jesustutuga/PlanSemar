@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Prueba de Fórmulas KaTeX</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzYCEHPNkoPS8jVcOgoOuvaxf0Db9kTB6VA" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: sans-serif;
+            font-size: 2rem;
+            text-align: center;
+            padding-top: 5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Prueba de Renderizado de Fórmulas</h1>
+
+    <p>Esto es una prueba estática:</p>
+    <p>Calcula el límite: $ \lim_{x \to \infty} 5 $</p>
+
+    <hr style="margin: 2rem; border-color: #444;">
+
+    <p>Esto es una prueba dinámica (aparece después de 2 segundos):</p>
+    <div id="dynamic-content"></div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // Función que se asegura de que KaTeX esté cargado antes de usarlo
+            const onKatexLoad = () => {
+                
+                // Opciones para que KaTeX sepa qué buscar ($...$ y $$...$$)
+                const katexOptions = {
+                    delimiters: [
+                        {left: "$$", right: "$$", display: true},
+                        {left: "$", right: "$", display: false}
+                    ]
+                };
+
+                // El "guardia de seguridad": se ejecuta cada vez que algo cambia en la página
+                const renderMathCallback = function(mutationsList, observer) {
+                    console.log("Observador detectó un cambio, renderizando fórmulas...");
+                    // Llama al "dibujante" de KaTeX en toda la página
+                    renderMathInElement(document.body, katexOptions);
+                };
+
+                // Crea el observador con la función anterior
+                const observer = new MutationObserver(renderMathCallback);
+
+                // Le dice al observador que vigile TODO: nuevos elementos, cambios de texto, etc.
+                observer.observe(document.body, { 
+                    childList: true, 
+                    subtree: true, 
+                    characterData: true 
+                });
+
+                // Simula que tu app añade una pregunta dinámicamente después de 2 segundos
+                setTimeout(() => {
+                    const dynamicDiv = document.getElementById('dynamic-content');
+                    dynamicDiv.textContent = 'Fórmula cuadrática: $$ x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a} $$';
+                }, 2000);
+            };
+            
+            // Revisa si el script de KaTeX ya cargó, si no, espera a que termine
+            if (window.renderMathInElement) {
+                onKatexLoad();
+            } else {
+                const autoRenderScript = document.querySelector('script[src*="auto-render.min.js"]');
+                if (autoRenderScript) {
+                    autoRenderScript.addEventListener('load', onKatexLoad);
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>
